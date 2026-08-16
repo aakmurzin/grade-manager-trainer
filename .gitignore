@@ -1,0 +1,10 @@
+.DS_Store
+.vercel
+.env
+.env.local
+node_modules
+*.log
+
+stitch_grade_tycoon_asset_prompts/
+.env*
+.cursor-local/
