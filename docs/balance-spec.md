@@ -419,20 +419,30 @@ long-delivery контракты.
 
 ---
 
-## 15. Calibration status (addendum-46 / 51)
+## 15. Calibration status (addendum-53 — цикл закрыт)
 
-| Company | Level | Status | Next |
-|---|---|---|---|
-| **Marketing Agency** | Director | **Closed** (addendum-24→46) | — |
-| **Design Agency** | Trainee | **Closed** (addendum-17→51) | — |
-| Product Studio | Trainee | Acceptable (addendum-42 unified) | Monitor |
-| IT Outsourcing | Manager | High variance, acceptable mean (addendum-42) | Monitor |
+| Company | Level | Bankrupt | Profitable | Mean NP | Status |
+|---|---|---|---|---|---|
+| **Design Agency** | Trainee | 0% | 87.5% | +$6,013 (median) | **Closed** (`addendum-17`→`51`) |
+| **Product Studio** | Trainee | 4.2% | 58.3% | +$1,235 | **Confirmed** (`addendum-52`) |
+| **IT Outsourcing** | Manager | 50% | 50% | +$7,432 | **Confirmed** (high variance, `addendum-52`) |
+| **Marketing Agency** | Director | 66.7% | 29.2% | +$404 | **Closed** (`addendum-24`→`46`) |
 
-Marketing final snapshot: `checkBand [5000,7000]`, Accountant trigger `load≥2` held 2w, start
-$10k, compliance §9 unchanged. See `docs/addendum-46.md`.
+Основной калибровочный цикл (`addendum-08`→`52`) **завершён**. Четыре профиля риска
+подтверждены эмпирически на детерминированных seeds — см. `docs/addendum-53.md`.
 
-Design final snapshot: `checkBand [900,1100]`, Designer domain-delivery, forceAssign **1w**,
-start **$20k**, spawn **0.75w**. Paired: 0% bankrupt, 87.5% profitable, median **+$6k**.
-See `docs/addendum-51.md`.
+Marketing final: `checkBand [5000,7000]`, Accountant `load≥2` held 2w, start $10k. See
+`docs/addendum-46.md`.
 
-Both Marketing and Design calibrated on **deterministic paired methodology** (addendum-42+).
+Design final: `checkBand [900,1100]`, Designer domain-delivery, forceAssign **1w**, start
+**$20k**, spawn **0.75w**. See `docs/addendum-51.md`.
+
+Product Studio (seeds `20001..20024`): A52 bit-match A42; цикл не открыт. See
+`docs/addendum-52.md`.
+
+IT Outsourcing (seeds `30001..30024`): A52 bit-match A42; поляризованный Manager-профиль;
+цикл не открыт. See `docs/addendum-52.md`.
+
+Опциональный бэклог (не блокирует): Rapid fair/winnable, headcount diminishing returns (A18),
+Team Lead span TBD, Marketing compliance telemetry, Design s13 outlier, Manager/Director
+верхнеуровневые механики — `docs/addendum-53.md`.

@@ -73,26 +73,29 @@ export type SessionResult = {
   inProgressProjectsAtEnd: number;
 };
 
-function planBatch(
-  n = 24,
-  scope: 'all' | 'trainee' | 'design' | 'marketing' = 'all',
-): SessionPlan[] {
+type BatchScope = 'all' | 'trainee' | 'design' | 'marketing' | 'product' | 'it';
+
+function planBatch(n = 24, scope: BatchScope = 'all'): SessionPlan[] {
   const companies: { companyType: CompanyType; managerLevel: ManagerLevel }[] =
     scope === 'marketing'
       ? [{ companyType: 'marketing_agency', managerLevel: 'director' }]
       : scope === 'design'
-      ? [{ companyType: 'design_agency', managerLevel: 'trainee' }]
-      : scope === 'trainee'
-        ? [
-            { companyType: 'design_agency', managerLevel: 'trainee' },
-            { companyType: 'product_studio', managerLevel: 'trainee' },
-          ]
-        : [
-            { companyType: 'design_agency', managerLevel: 'trainee' },
-            { companyType: 'product_studio', managerLevel: 'trainee' },
-            { companyType: 'it_outsourcing', managerLevel: 'manager' },
-            { companyType: 'marketing_agency', managerLevel: 'director' },
-          ];
+        ? [{ companyType: 'design_agency', managerLevel: 'trainee' }]
+        : scope === 'product'
+          ? [{ companyType: 'product_studio', managerLevel: 'trainee' }]
+          : scope === 'it'
+            ? [{ companyType: 'it_outsourcing', managerLevel: 'manager' }]
+            : scope === 'trainee'
+              ? [
+                  { companyType: 'design_agency', managerLevel: 'trainee' },
+                  { companyType: 'product_studio', managerLevel: 'trainee' },
+                ]
+              : [
+                  { companyType: 'design_agency', managerLevel: 'trainee' },
+                  { companyType: 'product_studio', managerLevel: 'trainee' },
+                  { companyType: 'it_outsourcing', managerLevel: 'manager' },
+                  { companyType: 'marketing_agency', managerLevel: 'director' },
+                ];
   const per = Math.ceil(n / companies.length);
   const plans: SessionPlan[] = [];
   let i = 0;
@@ -361,15 +364,15 @@ async function main() {
   const mode = (process.env.PLAYTEST_AGENT ?? 'reasonable') as 'reasonable' | 'llm';
   const format: SessionFormat =
     process.env.PLAYTEST_FORMAT === 'classical_4q' ? 'classical_4q' : 'rapid_10min';
-  const scope = (
-    process.env.PLAYTEST_SCOPE === 'trainee'
-      ? 'trainee'
-      : process.env.PLAYTEST_SCOPE === 'design'
-        ? 'design'
-        : process.env.PLAYTEST_SCOPE === 'marketing'
-          ? 'marketing'
-          : 'all'
-  ) as 'all' | 'trainee' | 'design' | 'marketing';
+  const scopeEnv = process.env.PLAYTEST_SCOPE;
+  const scope: BatchScope =
+    scopeEnv === 'trainee' ||
+    scopeEnv === 'design' ||
+    scopeEnv === 'marketing' ||
+    scopeEnv === 'product' ||
+    scopeEnv === 'it'
+      ? scopeEnv
+      : 'all';
   const plans = planBatch(n, scope);
 
   const agentFactory =
