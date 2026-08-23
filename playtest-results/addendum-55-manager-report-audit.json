@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "addendum": 55,
+    "purpose": "Manager Report live audit — one Design Trainee 4Q session",
+    "companyType": "design_agency",
+    "managerLevel": "trainee",
+    "seed": 10005,
+    "seedIndex": 5,
+    "createdAt": "2026-08-23T14:54:45.047Z"
+  },
+  "companyReport": {
+    "startBudget": 20000,
+    "finalBudget": 28998,
+    "bankrupt": false,
+    "quarters": [
+      {
+        "quarter": 1,
+        "revenue": 7789,
+        "salaries": 8210,
+        "overheads": 1232,
+        "ebitda": -1653,
+        "netProfit": -1653,
+        "ebitdaCheck": true
+      },
+      {
+        "quarter": 2,
+        "revenue": 11909,
+        "salaries": 6066,
+        "overheads": 910,
+        "ebitda": 4933,
+        "netProfit": 4933,
+        "ebitdaCheck": true
+      },
+      {
+        "quarter": 3,
+        "revenue": 17332,
+        "salaries": 9810,
+        "overheads": 1472,
+        "ebitda": 6050,
+        "netProfit": 6050,
+        "ebitdaCheck": true
+      },
+      {
+        "quarter": 4,
+        "revenue": 17281,
+        "salaries": 9316,
+        "overheads": 1397,
+        "ebitda": 6568,
+        "netProfit": 6568,
+        "ebitdaCheck": true
+      }
+    ],
+    "cumulativeNetProfit": 15898,
+    "sumOfQuarterNetProfit": 15898,
+    "plReconciliationOk": true,
+    "note": "UI PLTable shows Revenue/Salaries/Overheads/EBITDA/Net Profit (no separate Gross Profit line)."
+  },
+  "managerReport": {
+    "activityIndex": 1,
+    "archetype": "generalist",
+    "paei": {
+      "p": 81,
+      "a": 100,
+      "e": 67,
+      "i": 18
+    },
+    "axes": {
+      "hiring_discipline": {
+        "score": 91,
+        "confidence": "medium",
+        "n": 5
+      },
+      "delivery_quality": {
+        "score": 70,
+        "confidence": "high",
+        "n": 52
+      },
+      "client_retention": {
+        "score": null,
+        "confidence": "n/a",
+        "n": 0
+      },
+      "people_leadership": {
+        "score": 18,
+        "confidence": "high",
+        "n": 15
+      },
+      "cashflow_discipline": {
+        "score": 100,
+        "confidence": "high",
+        "n": 48
+      },
+      "prioritization": {
+        "score": 70,
+        "confidence": "high",
+        "n": 101
+      },
+      "capacity_planning": {
+        "score": 100,
+        "confidence": "low",
+        "n": 4
+      }
+    },
+    "mediumOrHighAxes": 5,
+    "flaggedMoments": []
+  },
+  "decisionLog": {
+    "totalEntries": 356,
+    "eventCounts": {
+      "session_start": 1,
+      "hire": 5,
+      "week_snapshot": 48,
+      "lead_inspected": 62,
+      "assign_lead": 62,
+      "project_inspected": 82,
+      "assign_project": 52,
+      "build_desk": 3,
+      "project_skipped": 15,
+      "rework": 9,
+      "random_event": 2,
+      "promotion_accept": 6,
+      "bonus": 8,
+      "promotion_decline": 1
+    },
+    "eventInventory": [
+      {
+        "eventType": "session_start",
+        "countInThisSession": 1,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "hire",
+        "countInThisSession": 5,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "assign_lead",
+        "countInThisSession": 62,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "assign_project",
+        "countInThisSession": 52,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "lead_inspected",
+        "countInThisSession": 62,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "lead_skipped",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "project_inspected",
+        "countInThisSession": 82,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "project_skipped",
+        "countInThisSession": 15,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "candidates_rerolled",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "bonus",
+        "countInThisSession": 8,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "employee_terminated",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "promotion_accept",
+        "countInThisSession": 6,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "promotion_decline",
+        "countInThisSession": 1,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "build_room",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "build_desk",
+        "countInThisSession": 3,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "week_snapshot",
+        "countInThisSession": 48,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "rework",
+        "countInThisSession": 9,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "quit",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "near_bankruptcy",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "random_event",
+        "countInThisSession": 2,
+        "presentInThisSession": true
+      },
+      {
+        "eventType": "client_churn",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      },
+      {
+        "eventType": "retainer_payout",
+        "countInThisSession": 0,
+        "presentInThisSession": false
+      }
+    ],
+    "sampleAssignLead": {
+      "leadId": "d9e7acb8-a06f-4be8-8cc6-5be26c02f32e",
+      "employeeId": "082a7ed7-c138-4830-b82b-92b8a34dc50c",
+      "domain": "general_b2b",
+      "value": 943,
+      "idleWeeks": 1,
+      "hadIdleSales": false,
+      "matched": false,
+      "forced": true
+    },
+    "sampleAssignProject": {
+      "projectId": "e6d875ff-bdda-4c3c-bbd7-d31bb2f20be3",
+      "employeeId": "99c0d3fe-14f2-4318-bf1d-93b382a4c290",
+      "domain": "general_b2b",
+      "tier": "middle",
+      "value": 943,
+      "engagement": "one_off",
+      "idleWeeks": 0,
+      "stackMatch": true,
+      "matched": true,
+      "forced": false
+    },
+    "sampleBonus": {
+      "employeeId": "40ad1558-d4c2-4167-962d-0162d0743ebd",
+      "moraleBefore": 44.000000000000014,
+      "cost": 300,
+      "class": "reactive"
+    },
+    "sampleTerminated": null
+  }
+}
