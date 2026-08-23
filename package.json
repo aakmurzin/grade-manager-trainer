@@ -1,20 +1,47 @@
 {
-  "name": "grade-manager-trainer",
-  "version": "1.0.0",
+  "name": "grade-business-trainer",
+  "version": "0.1.0",
   "private": true,
-  "description": "Grade Manager Trainer — fork of Grade Tycoon",
+  "description": "Grade Business Trainer — management flight simulator for agencies and IT teams",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "npx serve public",
-    "deploy": "vercel --prod"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "assets:extract": "python3 scripts/extract_stitch_assets.py",
+    "playtest:batch": "tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts",
+    "playtest:trainee": "PLAYTEST_SCOPE=trainee PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts",
+    "playtest:design": "PLAYTEST_SCOPE=design PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts"
   },
   "engines": {
-    "node": ">=18"
-  },
-  "devDependencies": {
-    "vercel": "^58.9.1"
+    "node": ">=20"
   },
   "dependencies": {
-    "@vercel/analytics": "^2.0.1"
+    "@auth/drizzle-adapter": "^1.9.1",
+    "@neondatabase/serverless": "^1.0.1",
+    "bcryptjs": "^3.0.2",
+    "drizzle-orm": "^0.44.2",
+    "next": "^15.3.3",
+    "next-auth": "^5.0.0-beta.28",
+    "pixi.js": "^8.9.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "recharts": "^2.15.3",
+    "zod": "^3.25.56"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "drizzle-kit": "^0.31.1",
+    "eslint": "^9.28.0",
+    "eslint-config-next": "^15.3.3",
+    "tsx": "^4.23.12",
+    "typescript": "^5.8.3"
   }
 }

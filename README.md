@@ -1,72 +1,50 @@
-# Grade Manager Trainer
+# Grade Business Trainer
 
-Fork of [Grade Tycoon](https://github.com/aakmurzin/grade-tycoon) for training / manager scenarios.
+Management flight simulator for agencies and IT teams. New product (not a fork of the arcade) —
+shared brand tokens and some formulas only.
 
----
+## Stack
 
-# Grade Tycoon
+- **Next.js** (App Router) + TypeScript on **Vercel**
+- **Neon Postgres** + **Drizzle** (schema ready)
+- **Auth.js** (email/password — wiring next)
+- Game economy: pure TS reducer in `src/game/`
+- Manager Report: `src/game/report/` (7 axes)
+- Office render: PixiJS (upcoming); Dev Play uses DOM desks for now
 
-Isometric 16-bit office sim — a marketing prototype for [Grade](https://grade.app).
+## Docs
 
-Hire Sales / Dev / HR, close leads, ship projects, survive **4 quarters**, then see a Grade-style **P&L** (4 columns that fill one by one), submit to the **server leaderboard**, and jump to grade.app.
+| File | Purpose |
+|------|---------|
+| [`docs/pitch.md`](docs/pitch.md) | Product why |
+| [`docs/balance-spec.md`](docs/balance-spec.md) | Mechanics source of truth |
+| [`docs/HANDOFF.md`](docs/HANDOFF.md) | Original handoff (stack there said Supabase — we use Next/Neon) |
+| [`docs/prototype-reference.html`](docs/prototype-reference.html) | Arcade visual/P&L reference |
 
 ## Run locally
 
 ```bash
-# static only (no leaderboard API)
-npx serve public
-
-# full stack (game + /api/leaderboard)
-npx vercel dev
+npm install
+cp .env.example .env.local   # fill DATABASE_URL + AUTH_SECRET for login
+npm run db:push              # apply Drizzle schema to Neon
+npm run dev
 ```
 
-Open the URL Vercel prints (usually `http://localhost:3000`).
+Open [http://localhost:3000/play](http://localhost:3000/play) for Dev Play (works without DB).
 
-## Deploy to Vercel
+Login/signup need Neon. Generate secret:
 
 ```bash
-npx vercel --prod
+openssl rand -base64 32
 ```
 
-Or connect the GitHub repo in the [Vercel dashboard](https://vercel.com/new) — root directory is this folder (`api/` + `public/`).
+## Current status
 
-### Persistent leaderboard (recommended)
-
-Without Redis, scores live in serverless memory (reset on cold starts). For a real board, add **Vercel KV** or Upstash Redis and set:
-
-| Env var | Alt name |
-|---------|----------|
-| `KV_REST_API_URL` | `UPSTASH_REDIS_REST_URL` |
-| `KV_REST_API_TOKEN` | `UPSTASH_REDIS_REST_TOKEN` |
-
-In Vercel: Project → Settings → Environment Variables → add both → redeploy.
-
-Optional emails from the start screen are saved to a separate Redis list (`grade-tycoon:contacts`) when the player hits **Start** (and updated again on score submit). They stay available for your mailing list even if a score drops out of the top board. Public leaderboard responses never include emails.
-
-To export contacts, set `LEADERBOARD_EXPORT_SECRET` and call:
-
-```bash
-curl -H "Authorization: Bearer $LEADERBOARD_EXPORT_SECRET" \
-  "https://tycoon.grade.app/api/leaderboard?export=contacts"
-
-# CSV:
-curl -H "Authorization: Bearer $LEADERBOARD_EXPORT_SECRET" \
-  "https://tycoon.grade.app/api/leaderboard?export=contacts&format=csv" -o contacts.csv
-```
-
-## Project layout
-
-```
-api/leaderboard.js   GET/POST scores
-public/index.html    entire game (ISO office + economy + P&L)
-files/               original prototype handoff (reference)
-```
-
-## Game loop
-
-1. Pick company type → tutorial  
-2. Recruit → assign Sales → assign Dev → build desks / upgrade office  
-3. End of each quarter → P&L with Q1–Q4 columns (empty = `-`)  
-4. After Q4 (or bankruptcy) → full P&L + Total + leaderboard + CTA to grade.app  
-
-Score = **Net Profit + 15% of total revenue**.
+- [x] Next.js scaffold + brand tokens
+- [x] Decision-log TypeScript contract
+- [x] Game loop + support roles + promotions + compliance
+- [x] Dev Play UI + P&L + Manager Report radar
+- [x] PixiJS isometric office
+- [x] Auth.js credentials + session APIs
+- [ ] Apply Neon migrations + debug login with real `DATABASE_URL`
+- [ ] Balance calibration after live runs

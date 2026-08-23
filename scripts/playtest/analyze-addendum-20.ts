@@ -1,0 +1,147 @@
+/**
+ * Compare Addendum 20 Design Classical (check $600–700) vs Addendum 19 baseline.
+ */
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = join(__dirname, '../..');
+const RESULTS = join(ROOT, 'playtest-results');
+
+type Decision = { action: string; rationale: string };
+
+type Session = {
+  id: string;
+  companyType: string;
+  bankrupt: boolean;
+  weeksPlayed: number;
+  quarterNetProfit: number[];
+  netProfit: number;
+  decisions?: Decision[];
+};
+
+type Batch = { sessions: Session[] };
+
+function load(name: string): Batch {
+  return JSON.parse(readFileSync(join(RESULTS, name), 'utf8')) as Batch;
+}
+
+function median(xs: number[]): number | null {
+  if (!xs.length) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
+}
+
+function actionType(row: Decision): string {
+  try {
+    return (JSON.parse(row.action) as { type?: string }).type ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function funnel(sessions: Session[]) {
+  let assignProject = 0;
+  let skipProject = 0;
+  let assignLead = 0;
+  let skipLead = 0;
+  let forcedProject = 0;
+  for (const s of sessions) {
+    for (const d of s.decisions ?? []) {
+      const t = actionType(d);
+      if (t === 'assign_project') {
+        assignProject += 1;
+        if (d.rationale.toLowerCase().includes('forced mismatch')) forcedProject += 1;
+      }
+      if (t === 'skip_project') skipProject += 1;
+      if (t === 'assign_lead') assignLead += 1;
+      if (t === 'skip_lead') skipLead += 1;
+    }
+  }
+  const n = sessions.length || 1;
+  return {
+    assignProject,
+    skipProject,
+    assignLead,
+    skipLead,
+    forcedProject,
+    skipShare:
+      assignProject + skipProject > 0
+        ? Math.round((skipProject / (assignProject + skipProject)) * 1000) / 10
+        : 0,
+    assignProjectPerSession: Math.round((assignProject / n) * 10) / 10,
+  };
+}
+
+function analyze(sessions: Session[]) {
+  const completed4 = sessions.filter((s) => (s.quarterNetProfit?.length ?? 0) >= 4 && !s.bankrupt);
+  const q = (i: number) =>
+    sessions.map((s) => s.quarterNetProfit[i]).filter((n): n is number => typeof n === 'number');
+  const cumPositive = sessions.filter((s) => {
+    const qs = s.quarterNetProfit ?? [];
+    if (qs.length < 4) return false;
+    return qs.reduce((a, b) => a + b, 0) > 0;
+  }).length;
+  const q3or4plus = sessions.filter((s) => {
+    const qs = s.quarterNetProfit ?? [];
+    return (qs[2] ?? 0) > 0 || (qs[3] ?? 0) > 0;
+  }).length;
+  const q4plus = sessions.filter((s) => (s.quarterNetProfit[3] ?? 0) > 0).length;
+  const fullCums = sessions
+    .filter((s) => (s.quarterNetProfit?.length ?? 0) >= 4)
+    .map((s) => s.quarterNetProfit.reduce((a, b) => a + b, 0));
+  return {
+    n: sessions.length,
+    completed4: completed4.length,
+    bankrupt: sessions.filter((s) => s.bankrupt).length,
+    bankruptPct: Math.round((sessions.filter((s) => s.bankrupt).length / sessions.length) * 1000) / 10,
+    cum4plus: cumPositive,
+    cum4plusPct: Math.round((cumPositive / sessions.length) * 1000) / 10,
+    q3or4plus,
+    q4plus,
+    q1median: median(q(0)),
+    q2median: median(q(1)),
+    q3median: median(q(2)),
+    q4median: median(q(3)),
+    funnel: funnel(sessions),
+    bestCum: fullCums.length ? Math.max(...fullCums) : null,
+    rows: sessions.map((s) => {
+      const qs = s.quarterNetProfit ?? [];
+      const cum: number[] = [];
+      let acc = 0;
+      for (const x of qs) {
+        acc += x;
+        cum.push(acc);
+      }
+      return {
+        id: s.id,
+        bankrupt: s.bankrupt,
+        weeks: s.weeksPlayed,
+        q: qs.map((x) => Math.round(x)),
+        cum: cum.map((x) => Math.round(x)),
+      };
+    }),
+  };
+}
+
+function main() {
+  const a20Name = process.argv[2];
+  if (!a20Name) {
+    console.error('Usage: tsx analyze-addendum-20.ts <batch-a20.json>');
+    process.exit(1);
+  }
+  const a19 = load('batch-addendum-19-classical-design.json');
+  const a20 = load(a20Name);
+  const summary = {
+    a19_design: analyze(a19.sessions),
+    a20_design: analyze(a20.sessions),
+  };
+  const out = join(RESULTS, 'addendum-20-classical-summary.json');
+  writeFileSync(out, JSON.stringify(summary, null, 2));
+  console.log(JSON.stringify(summary, null, 2));
+  console.log('Wrote', out);
+}
+
+main();
