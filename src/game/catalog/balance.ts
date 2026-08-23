@@ -62,7 +62,7 @@ export const COMPANY_PROFILES: Record<
     label: 'Design Agency',
     leadFrequency: 'high',
     engagement: 'one_off',
-    checkBand: [800, 1000], // addendum-48: first paired raise vs A20 [600,700]
+    checkBand: [900, 1100], // addendum-51 final (paired A48/A50)
     variance: 'low',
     domains: ['ecommerce', 'general_b2b'],
     unlockLevel: 'trainee',

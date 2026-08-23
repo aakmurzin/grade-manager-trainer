@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | Частота лидов | высокая | средняя | низкая | высокая |
 | Engagement type | one-off | **long-delivery** | one-off | **recurring retainer** |
-| Средний чек | **$800–1000** (addendum-48 paired; было $600–700 A20) | средний/высокий | высокий, большой разброс | retainer **`[5000, 7000]`/q** — цикл закрыт addendum-46 |
+| Средний чек | **$900–1100**/deal — цикл закрыт addendum-51 | средний/высокий | высокий, большой разброс | retainer **`[5000, 7000]`/q** — цикл закрыт addendum-46 |
 | Разброс (variance) | низкий (намеренно) | низкий | высокий | средний (риск не в размере, а в удержании) |
 | Домен-affinity | E-commerce, общий B2B | Enterprise B2B, FinTech | Gaming, HealthTech | E-commerce, Gaming |
 | Delivery-роль | **Designer** (domain, без stack) | Dev (stack) | Dev (stack) | Dev (stack) |
@@ -147,6 +147,19 @@ score = 100 − early_expansion_penalty − late_expansion_penalty
 | Type | Кто использует | Механика выплаты |
 |---|---|---|
 | **One-off** | Design Agency, Product Studio | закрыл → выполнил → получил всё сразу |
+
+### One-off Design Trainee — детали (addendum-17→51)
+
+- Рабочий диапазон чека: **`[900, 1100]`** (paired addendum-48/50; цикл закрыт addendum-51)
+- Paired baseline (seeds 10001..10024, reasonable): bankrupt **0%**, profitable **87.5%**,
+  median NP **+$6,013** — fair/winnable Trainee Classical
+- Delivery: **Designer**, domain match (без stack); force-assign mismatch после **1w** idle
+  (addendum-19)
+- Start **$20,000**, spawn **0.75w** (addendum-21/22)
+- Остаточный хвост: 3/24 non-profitable survivors (2 близки к нулю; s13 outlier — optional,
+  не блокирует закрытие)
+- Дальнейший checkBand-тюнинг **не планируется** (diminishing returns A48→A50)
+
 | **Long-delivery** | IT Outsourcing | `duration` 1/3/6/12 месяцев, помесячные чекпоинты, `locksEmployee: true` |
 | **Recurring retainer** | Marketing Agency | платит каждый квартал, пока `inprogress` и назначен delivery (Dev); churn по Client Satisfaction |
 
@@ -406,14 +419,20 @@ long-delivery контракты.
 
 ---
 
-## 15. Calibration status (addendum-46)
+## 15. Calibration status (addendum-46 / 51)
 
 | Company | Level | Status | Next |
 |---|---|---|---|
 | **Marketing Agency** | Director | **Closed** (addendum-24→46) | — |
-| Design Agency | Trainee | **A48 `[800,1000]`** — 0% bankrupt, 66.7% profitable; loss tail diagnosed A49 | **Active** |
+| **Design Agency** | Trainee | **Closed** (addendum-17→51) | — |
 | Product Studio | Trainee | Acceptable (addendum-42 unified) | Monitor |
 | IT Outsourcing | Manager | High variance, acceptable mean (addendum-42) | Monitor |
 
 Marketing final snapshot: `checkBand [5000,7000]`, Accountant trigger `load≥2` held 2w, start
 $10k, compliance §9 unchanged. See `docs/addendum-46.md`.
+
+Design final snapshot: `checkBand [900,1100]`, Designer domain-delivery, forceAssign **1w**,
+start **$20k**, spawn **0.75w**. Paired: 0% bankrupt, 87.5% profitable, median **+$6k**.
+See `docs/addendum-51.md`.
+
+Both Marketing and Design calibrated on **deterministic paired methodology** (addendum-42+).
