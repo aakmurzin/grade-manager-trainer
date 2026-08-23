@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | Частота лидов | высокая | средняя | низкая | высокая |
 | Engagement type | one-off | **long-delivery** | one-off | **recurring retainer** |
-| Средний чек | низкий, узкий ($600–700, addendum-20) | средний/высокий | высокий, большой разброс | retainer **`[5000, 7000]`/q** — цикл закрыт addendum-46 |
+| Средний чек | **$800–1000** (addendum-48 paired; было $600–700 A20) | средний/высокий | высокий, большой разброс | retainer **`[5000, 7000]`/q** — цикл закрыт addendum-46 |
 | Разброс (variance) | низкий (намеренно) | низкий | высокий | средний (риск не в размере, а в удержании) |
 | Домен-affinity | E-commerce, общий B2B | Enterprise B2B, FinTech | Gaming, HealthTech | E-commerce, Gaming |
 | Delivery-роль | **Designer** (domain, без stack) | Dev (stack) | Dev (stack) | Dev (stack) |
@@ -411,7 +411,7 @@ long-delivery контракты.
 | Company | Level | Status | Next |
 |---|---|---|---|
 | **Marketing Agency** | Director | **Closed** (addendum-24→46) | — |
-| Design Agency | Trainee | Open — deep loss, 0% profitable (addendum-42) | **Next priority** |
+| Design Agency | Trainee | **A48 `[800,1000]`** — 0% bankrupt, 66.7% profitable; loss tail diagnosed A49 | **Active** |
 | Product Studio | Trainee | Acceptable (addendum-42 unified) | Monitor |
 | IT Outsourcing | Manager | High variance, acceptable mean (addendum-42) | Monitor |
 
