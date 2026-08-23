@@ -2,9 +2,15 @@
 .vercel
 .env
 .env.local
+.env*.local
 node_modules
 *.log
+.next
+out
+drizzle/meta
+playtest-results/
+tsconfig.tsbuildinfo
 
 stitch_grade_tycoon_asset_prompts/
-.env*
+stitch_grade_tycoon_asset_prompts 2/
 .cursor-local/

@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  --navy: #111d29;
+  --navy2: #0a141e;
+  --blue: #0351ff;
+  --lblue: #6fc1ff;
+  --green: #4ade80;
+  --yellow: #fbbf24;
+  --red: #ef4444;
+  --panel: #182636;
+  --border: #2a3d52;
+  --text: #e8eef5;
+  --muted: #9fb3c8;
+  --muted2: #5a6b7d;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-ui: 'Space Grotesk', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--navy2);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+a {
+  color: var(--lblue);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+}
+
+.pixel {
+  font-family: var(--font-pixel);
+}
+
+.btn {
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  padding: 14px 22px;
+  cursor: pointer;
+  box-shadow:
+    0 4px 0 #0233a8,
+    inset -2px -2px 0 rgba(0, 0, 0, 0.25),
+    inset 2px 2px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #0233a8;
+}
+
+.btn:disabled {
+  background: #2a3d52;
+  box-shadow: 0 4px 0 #17222f;
+  color: var(--muted2);
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  background: transparent;
+  color: var(--lblue);
+  border: 2px solid var(--border);
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  border-color: var(--blue);
+}
+
+.panel {
+  background: var(--panel);
+  border: 2px solid var(--border);
+  padding: 16px;
+}
+
+.work-progress {
+  height: 6px;
+  background: var(--navy2);
+  border: 1px solid var(--border);
+  margin: 8px 0 4px;
+  overflow: hidden;
+}
+
+.work-progress > i {
+  display: block;
+  height: 100%;
+  background: var(--blue);
+  min-width: 0;
+  transition: width 0.2s ease;
+}
+
+.work-progress.project > i {
+  background: var(--lblue);
+}
+
+.input {
+  width: 100%;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  color: #fff;
+  padding: 10px 12px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.label {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
