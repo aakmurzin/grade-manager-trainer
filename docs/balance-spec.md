@@ -69,12 +69,23 @@
 конкретным штрафом за характерную ошибку этой оси. Формула People Leadership — в §7 (там же
 классификация proactive/reactive/firefighting).
 
-**Hiring Discipline**
+**Hiring Discipline** (канон = `computeManagerReport.ts`, addendum-56 doc-sync)
 ```
-match_rate = наймов, где тир ≈ сложности задачи / все наймы
-score = 100 × match_rate − overpay_penalty
+score = 100
+  − senior_hires × 4                    # overpay proxy
+  − (junior_heavy ? 8 : 0)              # junior > 3× senior count
+  − max(0, rerolls − 2) × 4             # excessive candidate rerolls
+  − wasted_bonuses × 5
+  − avoidable_forced_rate × 18          # domain-specific; see below
+  − early_busy_fire_rate × 28           # fired before 1 job, utilization ≥40%
 ```
-`overpay_penalty` — нанял Senior под задачу, где Junior справился бы с приемлемым риском.
+`withEvidence(raw, hire_count, min=3)` смягчает при малой выборке. Flagged при rate ≥40%
+avoidable forced assigns.
+
+**Avoidable forced mismatch** (окно `AVOIDABLE_MISMATCH_WINDOW_WEEKS` = 3, addendum-56):
+forced assign считается avoidable, если **в том же domain/stack** в течение 3 недель **после**
+решения появился (a) matching hire или (b) matched assign на тот же domain. **Не** используется
+глобальный `week_snapshot.anyMatchAvailable` — он давал ложные 57/57 на seed 10005.
 
 **Delivery Quality & Risk**
 ```
@@ -446,3 +457,31 @@ IT Outsourcing (seeds `30001..30024`): A52 bit-match A42; поляризован
 Опциональный бэклог (не блокирует): headcount diminishing returns (A18), Team Lead span TBD,
 Marketing compliance telemetry, Design s13 outlier, Manager/Director верхнеуровневые механики —
 `docs/addendum-53.md`. Rapid fair/winnable — **отменён** (`docs/addendum-54.md`).
+
+---
+
+## 16. Manager Report implementation status (addendum-55 / 56)
+
+Живая проверка: Design Trainee seed `10005`, NP **+$15,898** — см.
+`docs/addendum-55.md`, `playtest-results/addendum-55-manager-report-audit.json`.
+Avoidable-mismatch fix: `docs/addendum-56.md`.
+
+| Компонент | Status | Notes |
+|---|---|---|
+| **Company Report (P&L)** | **Working** | Q1–Q4 Revenue / Salaries / Overheads / EBITDA / Net Profit; cumulative = Σ quarters. No separate Gross Profit row in UI. |
+| **Hiring Discipline** | **Working** | Implemented formula in §3.1 (not legacy `match_rate` draft). |
+| **Avoidable forced mismatch** | **Fixed (A56)** | Was 57/57 on seed 10005 due to global `anyMatchAvailable`; now domain-specific → 4/57. |
+| **Delivery Quality & Risk** | **Working** | Rework rate + compliance fails + mismatch penalties from `assign_project` / `rework` / `random_event`. |
+| **Client Retention** | **Working** | N/A on one-off (Design/Product); scored when LD/retainer assigns or churn exist (Marketing/IT). |
+| **People Leadership** | **Working** | Bonus class (proactive/reactive/firefighting/wasted) + promotions + quits. |
+| **Cashflow Discipline** | **Working** | `near_bankruptcy` + budget headroom from `week_snapshot`. |
+| **Prioritization** | **Working** | Idle wait only when `anyMatchAvailable`; skips count. |
+| **Capacity Planning** | **Working** | `build_desk`/`build_room` occupancy + cramped-week penalty. |
+| **Confidence layer** | **Working** | Each axis `{score, confidence, n}`; N/A when no evidence; archetype requires ≥4 medium/high. |
+| **activityIndex** | **Working** | Multiplier drag down to ×0.45; `inactive` if &lt;0.28 (rare on reasonable agent). |
+| **Archetypes** | **Working** | Rule-based; **known limitation:** reasonable agent → narrow spread (`generalist` on Design, `firefighter`/`insufficient_data` on Marketing/IT). Real players expected wider. `hoarder`/`inactive` rare on reasonable — by design. |
+| **PAEI** | **Working** | Derived from axes + domain/expansion; stored in report `__meta`. |
+| **Decision-log events** | **Implemented** | `hire`, `assign_*` (`matched`/`forced`), inspect/skip, `candidates_rerolled`, `bonus`, `employee_terminated`, promotions, builds, plus engine events. Not every type fires every session. |
+
+**Вердикт addendum-55/56:** оба отчёта работают на реальном прогоне. A56 закрыл шумный
+avoidable-mismatch flagged moment. Опционально: Gross Profit row в P&L UI.

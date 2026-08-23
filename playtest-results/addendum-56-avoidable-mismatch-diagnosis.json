@@ -1,0 +1,81 @@
+{
+  "seed": 10005,
+  "windowWeeks": 3,
+  "counts": {
+    "assign_lead": 62,
+    "forced_lead": 32,
+    "assign_project": 52,
+    "forced_project": 25,
+    "matched_lead_not_forced": 30
+  },
+  "currentImplementation": {
+    "avoidable": 57,
+    "forced": 57,
+    "rate": 1,
+    "triggerBreakdown": {
+      "matchHire": 2,
+      "matchFreed_global": 55,
+      "none": 0
+    }
+  },
+  "strictMatchHireOnly": {
+    "avoidable": 2,
+    "forced": 57,
+    "rate": 0.03508771929824561
+  },
+  "proposedDomainSpecific": {
+    "avoidable": 4,
+    "forced": 57,
+    "rate": 0.07017543859649122,
+    "matchHire": 2,
+    "laterMatchedSameDomain": 2
+  },
+  "sampleNonAvoidable": [],
+  "sampleAvoidableMatchFreed": [
+    {
+      "kind": "lead",
+      "week": 2,
+      "domain": "general_b2b",
+      "matchHire": false,
+      "matchFreed": true,
+      "avoidable": true,
+      "trigger": "matchFreed_global"
+    },
+    {
+      "kind": "lead",
+      "week": 3,
+      "domain": "general_b2b",
+      "matchHire": false,
+      "matchFreed": true,
+      "avoidable": true,
+      "trigger": "matchFreed_global"
+    },
+    {
+      "kind": "lead",
+      "week": 5,
+      "domain": "general_b2b",
+      "matchHire": false,
+      "matchFreed": true,
+      "avoidable": true,
+      "trigger": "matchFreed_global"
+    },
+    {
+      "kind": "lead",
+      "week": 5,
+      "domain": "general_b2b",
+      "matchHire": false,
+      "matchFreed": true,
+      "avoidable": true,
+      "trigger": "matchFreed_global"
+    },
+    {
+      "kind": "lead",
+      "week": 8,
+      "domain": "general_b2b",
+      "matchHire": false,
+      "matchFreed": true,
+      "avoidable": true,
+      "trigger": "matchFreed_global"
+    }
+  ]
+}

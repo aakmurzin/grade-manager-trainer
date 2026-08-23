@@ -196,7 +196,7 @@ export function computeManagerReport(log: DecisionLogEntry[]): ManagerReportResu
     if (avoidable.rate >= 0.4 && avoidable.forced > 0) {
       flagged.push({
         week: lastSnap?.week ?? 0,
-        description: `Avoidable mismatches: ${avoidable.avoidable}/${avoidable.forced} forced assigns (match freed within ${AVOIDABLE_MISMATCH_WINDOW_WEEKS}w)`,
+        description: `Avoidable mismatches: ${avoidable.avoidable}/${avoidable.forced} forced assigns (domain match or hire within ${AVOIDABLE_MISMATCH_WINDOW_WEEKS}w)`,
         axis: 'hiring_discipline',
       });
     }
@@ -588,12 +588,12 @@ function waitOverlappedMatch(
   );
 }
 
-/** Forced mismatch where a match freed within the look-ahead window. */
+/** Forced mismatch where a domain-specific match appeared within the look-ahead window. */
 function avoidableMismatchRate(
   _log: DecisionLogEntry[],
   leadAssigns: ReturnType<typeof ofType<'assign_lead'>>,
   assigns: ReturnType<typeof ofType<'assign_project'>>,
-  snapshots: ReturnType<typeof ofType<'week_snapshot'>>,
+  _snapshots: ReturnType<typeof ofType<'week_snapshot'>>,
   hires: ReturnType<typeof ofType<'hire'>>,
 ): { rate: number; forced: number; avoidable: number } {
   const forcedLeads = leadAssigns.filter((a) => a.payload.forced === true);
@@ -614,18 +614,19 @@ function avoidableMismatchRate(
         h.payload.role === 'sales' &&
         h.payload.domain === domain,
     );
-    const matchFreed = snapshots.some(
-      (s) =>
-        s.week > w0 &&
-        s.week <= w0 + window &&
-        s.payload.anyMatchAvailable === true &&
-        s.payload.idleSales > 0,
+    const laterMatched = leadAssigns.some(
+      (l) =>
+        l.week > w0 &&
+        l.week <= w0 + window &&
+        l.payload.domain === domain &&
+        l.payload.matched,
     );
-    if (matchHire || matchFreed) avoidable += 1;
+    if (matchHire || laterMatched) avoidable += 1;
   }
 
   for (const a of forcedProjects) {
     const w0 = a.week;
+    const domain = a.payload.domain;
     const stack = a.payload.stack;
     const matchHire = hires.some(
       (h) =>
@@ -633,16 +634,16 @@ function avoidableMismatchRate(
         h.week <= w0 + window &&
         (stack
           ? h.payload.role === 'dev' && h.payload.stack === stack
-          : h.payload.role === 'designer' && h.payload.domain === a.payload.domain),
+          : h.payload.role === 'designer' && h.payload.domain === domain),
     );
-    const matchFreed = snapshots.some(
-      (s) =>
-        s.week > w0 &&
-        s.week <= w0 + window &&
-        s.payload.anyMatchAvailable === true &&
-        s.payload.idleDevs > 0,
+    const laterMatched = assigns.some(
+      (p) =>
+        p.week > w0 &&
+        p.week <= w0 + window &&
+        p.payload.domain === domain &&
+        (stack ? p.payload.stack === stack : p.payload.matched),
     );
-    if (matchHire || matchFreed) avoidable += 1;
+    if (matchHire || laterMatched) avoidable += 1;
   }
 
   return { rate: avoidable / forced, forced, avoidable };
