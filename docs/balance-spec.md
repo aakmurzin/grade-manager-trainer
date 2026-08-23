@@ -33,7 +33,7 @@
 |---|---|---|---|---|
 | Частота лидов | высокая | средняя | низкая | высокая |
 | Engagement type | one-off | **long-delivery** | one-off | **recurring retainer** |
-| Средний чек | низкий, узкий ($600–700, addendum-20) | средний/высокий | высокий, большой разброс | retainer calibrated to **$5000–7000 per quarter** (addendum-43 paired), риск остаётся в удержании |
+| Средний чек | низкий, узкий ($600–700, addendum-20) | средний/высокий | высокий, большой разброс | retainer **`[5000, 7000]`/q** — цикл закрыт addendum-46 |
 | Разброс (variance) | низкий (намеренно) | низкий | высокий | средний (риск не в размере, а в удержании) |
 | Домен-affinity | E-commerce, общий B2B | Enterprise B2B, FinTech | Gaming, HealthTech | E-commerce, Gaming |
 | Delivery-роль | **Designer** (domain, без stack) | Dev (stack) | Dev (stack) | Dev (stack) |
@@ -153,9 +153,10 @@ score = 100 − early_expansion_penalty − late_expansion_penalty
 ### Recurring retainer — детали (addendum-24, уточнение addendum-28)
 
 - Сумма сделки — квартальный платёж (`checkpointValue` = чек; один чекпоинт на 12w контракт)
-- Рабочий диапазон чека для Marketing Director после addendum-43 paired: **`[5000, 7000]`**
-  (ранее `[4500, 6500]` из addendum-37; «поляризация» на `[5000, 7000]` не подтвердилась на
-  одинаковых seeds — см. `docs/addendum-43.md`)
+- Рабочий диапазон чека для Marketing Director: **`[5000, 7000]`** (paired addendum-43;
+  цикл addendum-24→**46 закрыт** — дальнейший checkBand-тюнинг не планируется)
+- Paired baseline (seeds 40001..40024, reasonable + Accountant trigger): bankrupt **66.7%**,
+  profitable **29.2%**, mean NP **+$404**, median **−$5.7k** — Director жёсткий по дизайну
 - Контракт **требует назначенного исполнителя** (delivery = **Dev**, не Marketer). `queued`
   (закрыт, но не назначен) не платит на EOQ, не качает progress и не проходит weekly churn
 - Пока retainer `inprogress` **и** `assignedEmployeeId` резолвится в сотрудника — выплата на
@@ -321,13 +322,18 @@ long-delivery контракты.
 
 Свой burnout не заводим — перегрузка проявляется через непокрытый риск, а не через мораль.
 
-Для headless-агента `reasonable` (Marketing Director, финальная addendum-37/39 конфигурация):
+Для headless-агента `reasonable` (Marketing Director, **финальная addendum-46**):
 
 - нанимать Accountant не "по умолчанию", а только при зрелом risk-profile
 - триггер: активный compliance-load-портфель **≥2** (`inprogress recurring_retainer/long_delivery`)
   удерживается **2 недели подряд**
-- если после этого найм откладывается, addendum-38/39 показывают, что причина обычно в бюджете
-  или конкурирующем Dev-hire под retainer backlog, а не в том, что сам trigger слишком поздний
+- **Принятое ограничение (addendum-46):** триггер не гарантирует hire при marginal budget —
+  insurance-paradox (защита доступна устойчивым сессиям, marginal часто не могут позволить hire
+  в момент нужды). Не баг; agent/engine-тюнинг триггера или §9 base rate **не продолжаем**
+- Остаточные bankrupt (~paired A45 на `[5000,7000]`): ~**19%** чистый post-payout payroll-разрыв,
+  ~**81%** compliance-related (coverage gap, не слабость защиты после hire)
+- **Telemetry debt:** weekly Compliance Load history в decision log — будущее улучшение
+  (addendum-38/46); не блокирует закрытие Marketing-цикла
 
 ---
 
@@ -397,3 +403,17 @@ long-delivery контракты.
   snapshot. Lesson: `addendum-36` `[5000,7000]` (no Accountant) was wrongly compared to
   `addendum-37` `[4500,6500]` (with Accountant); see `docs/addendum-44.md`.
 - Prefer paired runs (same seeds) when claiming plateau / polarization / local optimum.
+
+---
+
+## 15. Calibration status (addendum-46)
+
+| Company | Level | Status | Next |
+|---|---|---|---|
+| **Marketing Agency** | Director | **Closed** (addendum-24→46) | — |
+| Design Agency | Trainee | Open — deep loss, 0% profitable (addendum-42) | **Next priority** |
+| Product Studio | Trainee | Acceptable (addendum-42 unified) | Monitor |
+| IT Outsourcing | Manager | High variance, acceptable mean (addendum-42) | Monitor |
+
+Marketing final snapshot: `checkBand [5000,7000]`, Accountant trigger `load≥2` held 2w, start
+$10k, compliance §9 unchanged. See `docs/addendum-46.md`.
