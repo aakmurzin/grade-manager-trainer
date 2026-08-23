@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { CompanyType, DecisionLogEntry, DomainId, ManagerLevel, SessionFormat } from '@/game';
+import type { CompanyType, DecisionLogEntry, DomainId, ManagerLevel } from '@/game';
 import { FREE_REROLLS_PER_SESSION } from '@/game/catalog/balance';
 import { HeadlessSession } from '@/game/headless';
 import { sessionSeedFor } from '@/game/engine/seeds';
@@ -119,18 +119,16 @@ function planBatch(n = 24, scope: BatchScope = 'all'): SessionPlan[] {
 async function runSession(
   plan: SessionPlan,
   agentFactory: (seed: number) => PlayAgent,
-  format: SessionFormat,
 ): Promise<SessionResult> {
   const session = new HeadlessSession({
     companyType: plan.companyType,
-    format,
     speed: 1,
     managerLevel: plan.managerLevel,
     seed: plan.seed,
   });
   const agent = agentFactory(plan.seed);
   const decisions: DecisionLogRow[] = [];
-  const maxSteps = format === 'classical_4q' ? 1200 : 400;
+  const maxSteps = 1200;
   let stuckTicks = 0;
 
   for (let step = 0; step < maxSteps; step++) {
@@ -362,8 +360,6 @@ function fairnessVerdict(results: SessionResult[], meanProfit: number, profitabl
 async function main() {
   const n = Number(process.env.PLAYTEST_N ?? 24);
   const mode = (process.env.PLAYTEST_AGENT ?? 'reasonable') as 'reasonable' | 'llm';
-  const format: SessionFormat =
-    process.env.PLAYTEST_FORMAT === 'classical_4q' ? 'classical_4q' : 'rapid_10min';
   const scopeEnv = process.env.PLAYTEST_SCOPE;
   const scope: BatchScope =
     scopeEnv === 'trainee' ||
@@ -381,11 +377,11 @@ async function main() {
       : (seed: number) => createReasonableAgent(seed);
 
   console.log(
-    `Running ${plans.length} sessions agent=${mode} format=${format} scope=${scope}…`,
+    `Running ${plans.length} sessions agent=${mode} scope=${scope}…`,
   );
   const results: SessionResult[] = [];
   for (const plan of plans) {
-    const r = await runSession(plan, agentFactory, format);
+    const r = await runSession(plan, agentFactory);
     results.push(r);
     const tag = r.bankrupt ? 'BANKRUPT' : r.profitable ? 'PROFIT' : 'FLAT/LOSS';
     const q = r.quarterNetProfit.map((x) => Math.round(x)).join(',');
@@ -407,9 +403,8 @@ async function main() {
           createdAt: new Date().toISOString(),
           agentMode: mode,
           n: plans.length,
-          format,
           scope,
-          note: 'Deterministic engine+agent seeds via sessionSeedFor(); isolated and unified share per-type seed ranges.',
+          note: 'Deterministic engine+agent seeds via sessionSeedFor(); 4-quarter sessions only (addendum-54).',
         },
         summary,
         sessions: results,

@@ -22,7 +22,7 @@ Product — средний; IT / Marketing — высокий разброс п�
 
 ## Что осталось (опционально, не блокирует)
 
-- Rapid fair/winnable критерий (`addendum-15`) — не сформулирован отдельно от Classical
+- ~~Rapid fair/winnable критерий (`addendum-15`)~~ — **отменён** (`addendum-54`, Rapid удалён)
 - Убывающая отдача от роста штата (`addendum-18`) — диагностика не запускалась
 - Team Lead span-of-control (`balance-spec.md §9`, TBD)
 - Marketing telemetry-gap (weekly Compliance Load history)

@@ -5,7 +5,6 @@ async function runOnce(seed: number) {
   const session = new HeadlessSession({
     companyType: 'marketing_agency',
     managerLevel: 'director',
-    format: 'classical_4q',
     seed,
   });
   const agent = createReasonableAgent(seed);

@@ -19,7 +19,6 @@ const N = 24;
 async function runSession(seed: number, index: number) {
   const session = new HeadlessSession({
     companyType: 'design_agency',
-    format: 'classical_4q',
     speed: 1,
     managerLevel: 'trainee',
     seed,
@@ -206,7 +205,6 @@ async function main() {
           addendum: 47,
           companyType: 'design_agency',
           managerLevel: 'trainee',
-          format: 'classical_4q',
           checkBand: [600, 700],
           startBudgetNote: 'trainee base 18000 + design buffer 2000 = 20000',
           seeds: Array.from({ length: N }, (_, i) => sessionSeedFor('design_agency', i + 1)),

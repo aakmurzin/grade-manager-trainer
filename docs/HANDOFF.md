@@ -59,8 +59,8 @@ sessions (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid references trainer_users(id),
   company_type    text not null,      -- design_agency | it_outsourcing | product_studio | marketing_agency
-  format          text not null,      -- rapid_10min | classical_4q
-  speed_selected  int,                -- 1|2|3, только для rapid_10min
+  format          text not null,      -- always classical_4q (legacy rapid_10min rows may exist)
+  speed_selected  int,                -- 1|2|3 at session start
   started_at      timestamptz default now(),
   finished_at     timestamptz,
   final_budget    numeric,
@@ -110,7 +110,7 @@ manager_reports (
 - Хранение `state` в глобальных JS-переменных → React state/context
 - CSS-фигуры персонажей → спрайт-листы (см. `asset-prompts.md`)
 - Плоский `desks[]` массив → `rooms[]` с вложенными `desks[]` (см. `balance-spec.md §11`)
-- Жёсткий 90-секундный таймер → двухрежимная система (`balance-spec.md §10`)
+- Жёсткий 90-секундный таймер → 4 квартала, Play/Pause/Speed (`balance-spec.md §10`, addendum-54)
 
 ---
 
@@ -139,8 +139,8 @@ Signup/Login (email+password, Supabase Auth)
 ## 7. Экраны — приоритет для разработки
 
 1. Login / Signup
-2. Company & Format Select (тип компании + Rapid 10-мин / Classical 4 квартала)
-3. Main Office Screen (HUD, комнаты, тулбар, кнопка ускорения)
+2. Company Select (тип компании → сразу в 4-квартальную сессию)
+3. Main Office Screen (HUD, комнаты, Play/Pause, 1x/2x/3x)
 4. Manager Report (radar chart на 6 осей, архетип, flagged moments) — экспортируемый/шарибельный
 5. Quarter-end P&L modal
 6. Session History (список прошлых прохождений, видимый прогресс между попытками)

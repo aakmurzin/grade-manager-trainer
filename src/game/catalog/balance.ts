@@ -379,6 +379,9 @@ export const DOMAIN_REPUTATION_ON_CLOSE = 5;
 /** Delivery component when work actually finishes (draft, uncalibrated). */
 export const DOMAIN_REPUTATION_ON_COMPLETE = 2;
 
+/** Four quarters × 12 weeks — the only session length (addendum-54). */
+export const SESSION_QUARTERS = 4;
+
 /** Real-time seconds per game week at 1×.
  * One quarter = 10 minutes = 12 weeks → 50s/week.
  * Override with NEXT_PUBLIC_WEEK_SECONDS only for local debug. */

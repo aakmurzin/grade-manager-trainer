@@ -18,7 +18,6 @@ export type CompanyType =
   | 'product_studio'
   | 'marketing_agency';
 
-export type SessionFormat = 'rapid_10min' | 'classical_4q';
 export type SpeedMultiplier = 1 | 2 | 3;
 export type ManagerLevel = 'trainee' | 'manager' | 'director';
 export type EngagementType = 'one_off' | 'long_delivery' | 'recurring_retainer';
@@ -65,7 +64,6 @@ interface BasePayload {
 
 export interface SessionStartPayload extends BasePayload {
   companyType: CompanyType;
-  format: SessionFormat;
   speed: SpeedMultiplier;
   managerLevel: ManagerLevel;
   startBudget: number;

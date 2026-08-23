@@ -60,7 +60,6 @@ function summarize(sessions: SessionOut[]) {
 async function runSession(seed: number, index: number): Promise<SessionOut> {
   const session = new HeadlessSession({
     companyType: 'marketing_agency',
-    format: 'classical_4q',
     speed: 1,
     managerLevel: 'director',
     seed,

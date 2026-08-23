@@ -4,7 +4,6 @@ import type {
   EngagementType,
   ManagerLevel,
   RoleId,
-  SessionFormat,
   SkillTier,
   SpeedMultiplier,
   StackId,
@@ -25,6 +24,7 @@ import {
   ROLE_HIRE_COOLDOWN_WEEKS,
   ROLE_SALARY_BASE,
   ROOM_COSTS,
+  SESSION_QUARTERS,
   SKILL_TIERS,
   startBudgetFor,
   TERMINATION_SEVERANCE_RATE,
@@ -153,7 +153,6 @@ export interface GameState extends RngCarrier {
   /** Session seed — drives rngState; same seed reproduces full engine trajectory. */
   sessionSeed: number;
   companyType: CompanyType;
-  format: SessionFormat;
   speed: SpeedMultiplier;
   paused: boolean;
   managerLevel: ManagerLevel;
@@ -440,7 +439,6 @@ function anyMatchAvailableNow(state: GameState): boolean {
 
 export function createInitialState(opts: {
   companyType: CompanyType;
-  format: SessionFormat;
   speed: SpeedMultiplier;
   managerLevel?: ManagerLevel;
   /** Same seed drives engine RNG; pass from batch harness for reproducible playtests. */
@@ -466,7 +464,6 @@ export function createInitialState(opts: {
     sessionSeed,
     rngState: initRngState(sessionSeed),
     companyType: opts.companyType,
-    format: opts.format,
     speed: opts.speed,
     paused: false,
     managerLevel,
@@ -474,7 +471,7 @@ export function createInitialState(opts: {
     budget: startBudget,
     week: 1,
     quarter: 1,
-    maxQuarters: opts.format === 'rapid_10min' ? 1 : 4,
+    maxQuarters: SESSION_QUARTERS,
     reputation: 40,
     domainReputation: {},
     domainSalesReputation: {},
@@ -504,7 +501,6 @@ export function createInitialState(opts: {
 
   log(state, 'session_start', {
     companyType: opts.companyType,
-    format: opts.format,
     speed: opts.speed,
     managerLevel,
     startBudget,
@@ -598,7 +594,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       next.speed = action.speed;
       return next;
     case 'SET_PAUSED':
-      if (next.format === 'rapid_10min') return state;
       next.paused = action.paused;
       return next;
     case 'REROLL_CANDIDATES': {

@@ -5,7 +5,6 @@ import {
   type GameAction,
   type GameState,
   type ManagerLevel,
-  type SessionFormat,
   type SpeedMultiplier,
 } from '@/game';
 import { buildPlayerView, type PlayerView } from '@/game/headless/playerView';
@@ -85,14 +84,12 @@ export class HeadlessSession {
 
   constructor(opts: {
     companyType: CompanyType;
-    format?: SessionFormat;
     speed?: SpeedMultiplier;
     managerLevel?: ManagerLevel;
     seed?: number;
   }) {
     this.state = createInitialState({
       companyType: opts.companyType,
-      format: opts.format ?? 'rapid_10min',
       speed: opts.speed ?? 1,
       managerLevel: opts.managerLevel ?? 'trainee',
       seed: opts.seed,

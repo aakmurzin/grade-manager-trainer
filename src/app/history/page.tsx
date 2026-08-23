@@ -136,7 +136,8 @@ export default function HistoryPage() {
               </span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
-              {s.format} · {new Date(s.startedAt).toLocaleString()}
+              {s.format === 'rapid_10min' ? 'Rapid (legacy)' : '4 quarters'} ·{' '}
+              {new Date(s.startedAt).toLocaleString()}
               {s.finishedAt ? ` → ${new Date(s.finishedAt).toLocaleString()}` : ''}
               {s.report?.archetype ? ` · ${s.report.archetype.replaceAll('_', ' ')}` : ''}
             </div>

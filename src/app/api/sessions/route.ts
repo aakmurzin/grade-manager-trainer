@@ -9,7 +9,6 @@ import type { DecisionLogEntry } from '@/game/decisionLog/types';
 
 const startSchema = z.object({
   companyType: z.string(),
-  format: z.string(),
   speedSelected: z.number().int().min(1).max(3).optional(),
 });
 
@@ -67,7 +66,7 @@ export async function POST(req: Request) {
     .values({
       userId: session.user.id,
       companyType: parsed.data.companyType,
-      format: parsed.data.format,
+      format: 'classical_4q',
       speedSelected: parsed.data.speedSelected ?? 1,
     })
     .returning();

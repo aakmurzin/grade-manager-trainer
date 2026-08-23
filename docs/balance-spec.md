@@ -350,12 +350,12 @@ long-delivery контракты.
 
 ---
 
-## 10. Тайминг сессии
+## 10. Тайминг сессии (addendum-54 — единственный формат)
 
-- **Основной формат**: 1 квартал = 10 минут реального времени без паузы; кнопка ускорения
-  (1x/2x/3x) доступна в любой момент по ходу игры, без предвыбора
-- **Classical**: 4 квартала, полный Play/Pause/1x/2x/3x — без давления часов
-- Игровое время: 1 неделя = игровой тик; квартал = 12 недель
+- **4 квартала** × 12 недель = 48 недель игрового времени
+- **Play / Pause / 1x / 2x / 3x** — темп полностью у игрока; без давления wall-clock
+- 1 квартал ≈ 10 минут реального времени при 1× (`SECONDS_PER_WEEK_1X` = 50s/week по умолчанию)
+- Rapid (1 квартал, без паузы) **удалён** — см. `docs/addendum-54.md`
 
 ---
 
@@ -443,6 +443,6 @@ Product Studio (seeds `20001..20024`): A52 bit-match A42; цикл не откр
 IT Outsourcing (seeds `30001..30024`): A52 bit-match A42; поляризованный Manager-профиль;
 цикл не открыт. See `docs/addendum-52.md`.
 
-Опциональный бэклог (не блокирует): Rapid fair/winnable, headcount diminishing returns (A18),
-Team Lead span TBD, Marketing compliance telemetry, Design s13 outlier, Manager/Director
-верхнеуровневые механики — `docs/addendum-53.md`.
+Опциональный бэклог (не блокирует): headcount diminishing returns (A18), Team Lead span TBD,
+Marketing compliance telemetry, Design s13 outlier, Manager/Director верхнеуровневые механики —
+`docs/addendum-53.md`. Rapid fair/winnable — **отменён** (`docs/addendum-54.md`).

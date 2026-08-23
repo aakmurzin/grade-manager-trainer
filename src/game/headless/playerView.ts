@@ -63,7 +63,6 @@ export function buildPlayerView(state: GameState) {
     companyType: state.companyType,
     companyLabel: COMPANY_PROFILES[state.companyType].label,
     managerLevel: state.managerLevel,
-    format: state.format,
     budget: state.budget,
     startBudget: state.startBudget,
     week: state.week,

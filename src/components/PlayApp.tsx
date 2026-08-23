@@ -8,6 +8,7 @@ import {
   QUARTER_MINUTES_1X,
   ROLE_LABELS,
   SECONDS_PER_WEEK_1X,
+  SESSION_QUARTERS,
   WEEKS_PER_QUARTER,
   canAccessCompany,
   companyUsesStack,
@@ -20,7 +21,6 @@ import {
   type CompanyType,
   type GameState,
   type ManagerLevel,
-  type SessionFormat,
   type SpeedMultiplier,
 } from '@/game';
 import { computeManagerReport } from '@/game/report/computeManagerReport';
@@ -62,7 +62,6 @@ export function PlayApp() {
   const { data: auth } = useSession();
   const [phase, setPhase] = useState<Phase>('select');
   const [companyType, setCompanyType] = useState<CompanyType>('design_agency');
-  const [format, setFormat] = useState<SessionFormat>('rapid_10min');
   const [speed, setSpeed] = useState<SpeedMultiplier>(1);
   const [managerLevel, setManagerLevel] = useState<ManagerLevel>('trainee');
   const [sessionKey, setSessionKey] = useState(0);
@@ -80,7 +79,7 @@ export function PlayApp() {
         const res = await fetch('/api/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ companyType, format, speedSelected: speed }),
+          body: JSON.stringify({ companyType, speedSelected: speed }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -105,8 +104,8 @@ export function PlayApp() {
           {auth?.user
             ? `Signed in as ${auth.user.email}`
             : 'Playing locally (Dev). Sign in to persist sessions.'}{' '}
-          At 1×: {WEEKS_PER_QUARTER} weeks/quarter · ~{Math.round(QUARTER_MINUTES_1X)} min/quarter (
-          {SECONDS_PER_WEEK_1X}s/week).
+          At 1×: {SESSION_QUARTERS} quarters × {WEEKS_PER_QUARTER} weeks · ~{Math.round(QUARTER_MINUTES_1X)} min/quarter (
+          {SECONDS_PER_WEEK_1X}s/week). Play / Pause / 1x–3x during the session.
         </p>
 
         <h2 className="pixel" style={{ fontSize: 9, marginTop: 28 }}>
@@ -168,28 +167,6 @@ export function PlayApp() {
         </div>
 
         <h2 className="pixel" style={{ fontSize: 9, marginTop: 28 }}>
-          FORMAT
-        </h2>
-        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-          {(
-            [
-              ['rapid_10min', 'Rapid · 1×10 min'],
-              ['classical_4q', 'Classical · 4×10 min'],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              className="btn-ghost"
-              style={{ borderColor: format === id ? 'var(--green)' : 'var(--border)' }}
-              onClick={() => setFormat(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <h2 className="pixel" style={{ fontSize: 9, marginTop: 28 }}>
           START SPEED
         </h2>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
@@ -217,7 +194,6 @@ export function PlayApp() {
     <GameSession
       key={sessionKey}
       companyType={companyType}
-      format={format}
       speed={speed}
       managerLevel={managerLevel}
       remoteSessionId={remoteSessionId}
@@ -232,7 +208,6 @@ export function PlayApp() {
 
 function GameSession({
   companyType,
-  format,
   speed,
   managerLevel,
   remoteSessionId,
@@ -243,7 +218,6 @@ function GameSession({
   showReport,
 }: {
   companyType: CompanyType;
-  format: SessionFormat;
   speed: SpeedMultiplier;
   managerLevel: ManagerLevel;
   remoteSessionId: string | null;
@@ -254,7 +228,7 @@ function GameSession({
   showReport: boolean;
 }) {
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
-    createInitialState({ companyType, format, speed, managerLevel }),
+    createInitialState({ companyType, speed, managerLevel }),
   );
   const [tab, setTab] = useState<'recruit' | 'sales' | 'tasks' | 'team'>('recruit');
   const [saved, setSaved] = useState(false);
@@ -423,16 +397,14 @@ function OfficeShell({
               {s}x
             </button>
           ))}
-          {state.format === 'classical_4q' && (
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ padding: '8px 10px', fontSize: 8 }}
-              onClick={() => dispatch({ type: 'SET_PAUSED', paused: !state.paused })}
-            >
-              {state.paused ? 'PLAY' : 'PAUSE'}
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ padding: '8px 10px', fontSize: 8 }}
+            onClick={() => dispatch({ type: 'SET_PAUSED', paused: !state.paused })}
+          >
+            {state.paused ? 'PLAY' : 'PAUSE'}
+          </button>
         </div>
       </header>
 

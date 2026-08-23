@@ -13,8 +13,8 @@
     "db:push": "drizzle-kit push",
     "assets:extract": "python3 scripts/extract_stitch_assets.py",
     "playtest:batch": "tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts",
-    "playtest:classical-trainee": "PLAYTEST_FORMAT=classical_4q PLAYTEST_SCOPE=trainee PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts",
-    "playtest:classical-design": "PLAYTEST_FORMAT=classical_4q PLAYTEST_SCOPE=design PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts"
+    "playtest:trainee": "PLAYTEST_SCOPE=trainee PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts",
+    "playtest:design": "PLAYTEST_SCOPE=design PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts"
   },
   "engines": {
     "node": ">=20"
