@@ -1,0 +1,33 @@
+{
+  "report": {
+    "archetypes": {
+      "hoarder": "You're protecting the budget extremely well — but the safety you're hoarding isn't turning into growth. An idle team costs just as much as risk does, just slower and less visibly.",
+      "generalist": "You don't lean hard in any one direction — not big risks, not tight defense, not deep focus. That's not inherently bad, but check: is this a deliberate balance, or did you just never settle on a focus?",
+      "firefighter": "You react to crises that have already caught fire more often than you prevent them. Your team and budget get attention once it's already late — try responding to early warning signs next time, not the fire itself.",
+      "cautious_builder": "You keep the budget safe almost all the time — it shows. The question is whether you're paying for that safety with lost growth: caution taken to the extreme costs just as much as risk, it's just harder to notice.",
+      "gambler": "You go for big bets — fast growth, minimal safety margin. Sometimes it pays off spectacularly, sometimes it costs a lot. Before repeating this in a real company, ask yourself: was the risk deliberate, or were you just rushing?",
+      "people_first": "Your team is in good shape — morale is high, turnover is low. But look at your growth and cashflow numbers: are you trading speed and growth for team comfort more than necessary?",
+      "specialist": "You're sticking to one domain or niche and clearly building reputation there. It works — until that niche cools off. Is it time to start thinking about diversifying, or is it too early?",
+      "insufficient_data": "Too early to judge — you haven't made enough decisions yet for a reliable read. Play a bit more before we draw conclusions.",
+      "inactive": "Low activity this session — scores stay capped until you hire, assign, and deliver more consistently."
+    }
+  },
+  "onboarding": {
+    "title": "How to play",
+    "intro": "You're running a company. Hire people, take on client work, keep the business alive — and grow it — over 4 quarters.",
+    "hiringTitle": "Hiring",
+    "hiring": "Each candidate has a role and a skill tier (Junior/Middle/Senior). Higher tiers cost more but perform better. You can re-roll the candidate pool if none of them fit.",
+    "assigningTitle": "Assigning work",
+    "assigning": "Leads and projects need to be matched to the right person — some require a specific specialization. If nobody available is a good match, you can either assign anyway or wait for a better fit. Both are valid choices — waiting has a cost too.",
+    "teamTitle": "Team",
+    "team": "Employees have morale. Give a bonus to lift it. Ignore it too long, and people leave. You can also let someone go if they're not working out — severance applies.",
+    "riskTitle": "Risk",
+    "risk": "Some industries are more heavily regulated than others. Compliance reviews can happen during the game, and they can carry a financial penalty.",
+    "growthTitle": "Growth",
+    "growth": "Build more desks, open new office rooms, and expand your team as revenue allows.",
+    "endTitle": "At the end",
+    "end": "You'll get two reports: your company's financial results (P&L), and a Manager Report — a breakdown of how you made your decisions, not just what the outcome was.",
+    "gotIt": "GOT IT",
+    "help": "?"
+  }
+}

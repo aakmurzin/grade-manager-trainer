@@ -13,16 +13,7 @@ import {
   type AxisConfidence,
   type ManagerReportResult,
 } from '@/game/report/computeManagerReport';
-
-const AXIS_LABELS: Record<string, string> = {
-  hiring_discipline: 'Hiring',
-  delivery_quality: 'Delivery',
-  client_retention: 'Retention',
-  people_leadership: 'People',
-  cashflow_discipline: 'Cashflow',
-  prioritization: 'Priority',
-  capacity_planning: 'Capacity',
-};
+import { useLocale } from '@/i18n/LocaleProvider';
 
 function confidenceColor(c: AxisConfidence): string {
   if (c === 'high') return 'var(--green)';
@@ -40,16 +31,18 @@ function paeiLine(report: ManagerReportResult): string | null {
 
 export function ManagerReportView({
   report,
-  title = 'MANAGER REPORT',
+  title,
   emphasize = false,
 }: {
   report: ManagerReportResult;
   title?: string;
   emphasize?: boolean;
 }) {
+  const { t, locale } = useLocale();
+  const axisLabel = (key: string) => t(`report.axes.${key}`);
+
   const data = Object.entries(report.scores).map(([key, value]) => ({
-    axis: AXIS_LABELS[key] ?? key,
-    // Don't plot n/a as 0 — leave a hole on the radar
+    axis: axisLabel(key),
     score: value.score,
     confidence: value.confidence,
   }));
@@ -57,11 +50,9 @@ export function ManagerReportView({
   const archetypeLabel =
     report.archetype == null
       ? '—'
-      : report.archetype === 'insufficient_data'
-        ? 'too early to judge'
-        : report.archetype.replaceAll('_', ' ');
+      : t(`report.archetypes.${report.archetype}`);
 
-  const blurb = archetypeBlurb(report.archetype);
+  const blurb = archetypeBlurb(report.archetype, locale);
   const paei = paeiLine(report);
 
   return (
@@ -73,19 +64,19 @@ export function ManagerReportView({
           color: emphasize ? '#fff' : 'var(--lblue)',
         }}
       >
-        {title}
+        {title ?? t('report.title')}
       </h2>
       <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-        Archetype:{' '}
+        {t('report.archetype')}{' '}
         <strong style={{ color: '#fff' }}>{archetypeLabel}</strong>
         {report.archetype === 'insufficient_data' && (
           <span style={{ color: 'var(--yellow)', marginLeft: 8 }}>
-            · need more decisions (medium/high confidence on ≥4 axes)
+            {t('report.insufficientHint')}
           </span>
         )}
         {report.archetype === 'inactive' && (
           <span style={{ color: 'var(--yellow)', marginLeft: 8 }}>
-            · low activity — scores capped
+            {t('report.inactiveHint')}
           </span>
         )}
       </p>
@@ -127,16 +118,16 @@ export function ManagerReportView({
         {Object.entries(report.scores).map(([key, value]) => (
           <div key={key} className="panel" style={{ padding: 12 }}>
             <div className="pixel" style={{ fontSize: 7, color: 'var(--muted)' }}>
-              {(AXIS_LABELS[key] ?? key).toUpperCase()}
+              {axisLabel(key).toUpperCase()}
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>
-              {value.score == null ? 'n/a' : value.score}
+              {value.score == null ? t('report.na') : value.score}
             </div>
             <div
               className="pixel"
               style={{ fontSize: 7, marginTop: 6, color: confidenceColor(value.confidence) }}
             >
-              {value.confidence.toUpperCase()}
+              {t(`report.confidence.${value.confidence}`)}
               {value.n > 0 ? ` · n=${value.n}` : ''}
             </div>
           </div>
@@ -146,12 +137,15 @@ export function ManagerReportView({
       {report.flaggedMoments.length > 0 && (
         <div style={{ marginTop: 24 }}>
           <h3 className="pixel" style={{ fontSize: 9, color: 'var(--yellow)' }}>
-            FLAGGED MOMENTS
+            {t('report.flagged')}
           </h3>
           <ul style={{ paddingLeft: 18, color: 'var(--text)', lineHeight: 1.6 }}>
             {report.flaggedMoments.map((m, i) => (
               <li key={i}>
-                <span style={{ color: 'var(--muted)' }}>Week {m.week}:</span> {m.description}
+                <span style={{ color: 'var(--muted)' }}>
+                  {t('report.week', { week: m.week })}
+                </span>{' '}
+                {m.description}
               </li>
             ))}
           </ul>

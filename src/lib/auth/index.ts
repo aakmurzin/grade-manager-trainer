@@ -8,7 +8,21 @@ import { trainerUsers } from '@/db/schema';
 const secret =
   process.env.AUTH_SECRET ??
   process.env.NEXTAUTH_SECRET ??
-  (process.env.NODE_ENV === 'development' ? 'dev-only-auth-secret' : undefined);
+  (process.env.NODE_ENV === 'development'
+    ? 'dev-only-auth-secret'
+    : // Vercel/prod without env: keep Auth.js from 500-ing session probes (Dev Play still works).
+      // Set a real AUTH_SECRET in the host env before enabling login.
+      'grade-trainer-unset-auth-secret-replace-me');
+
+if (
+  process.env.NODE_ENV === 'production' &&
+  !process.env.AUTH_SECRET &&
+  !process.env.NEXTAUTH_SECRET
+) {
+  console.warn(
+    '[auth] AUTH_SECRET is not set — login sessions are insecure. Add AUTH_SECRET in Vercel env.',
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,

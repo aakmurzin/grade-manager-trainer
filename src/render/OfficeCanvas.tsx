@@ -4,10 +4,13 @@ import { useEffect, useRef } from 'react';
 import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { GameState, RoleId } from '@/game';
 import {
+  coffeePropSlot,
   deskSlot,
   depthZ,
   isoToScreen,
+  plantPropSlot,
   seatOffset,
+  workSeatOffset,
   TILE_SPRITE_H,
   TILE_W,
 } from '@/render/iso';
@@ -26,7 +29,10 @@ const CHAR_ROLES: RoleId[] = [
 
 type FrameKind = 'idle' | 'walk0' | 'walk1' | 'walk2' | 'walk3' | 'work0' | 'work1';
 
-const ASSET_V = '22';
+const ASSET_V = '26';
+
+/** Work frames that already include a chair + mini-desk — hide furniture desk while working. */
+const WORK_BAKES_DESK = new Set<RoleId>(['sales']);
 
 /** Pixel height of drawn back walls. */
 const WALL_H = 40;
@@ -215,9 +221,9 @@ export function OfficeCanvas({ state }: { state: GameState }) {
       readyRef.current = true;
       keyRef.current = '';
 
-      app.ticker.add(() => {
+      app.ticker.add((ticker) => {
         if (!readyRef.current || !worldRef.current) return;
-        animRef.current += 0.08;
+        animRef.current += 0.08 * (ticker.deltaTime || 1);
         const s = stateRef.current;
         const key = sceneKey(s);
         const rebuild = key !== keyRef.current;
@@ -230,6 +236,7 @@ export function OfficeCanvas({ state }: { state: GameState }) {
           app.screen.width,
           app.screen.height,
           rebuild,
+          ticker.deltaMS || 16,
         );
       });
     })();
@@ -262,9 +269,41 @@ export function OfficeCanvas({ state }: { state: GameState }) {
   );
 }
 
-type CharNode = { sprite: Sprite; empId: string; role: RoleId; deskIndex: number };
+type CharNode = {
+  sprite: Sprite;
+  deskSpr: Sprite | null;
+  empId: string;
+  role: RoleId;
+  deskIndex: number;
+  homeX: number;
+  homeY: number;
+  workX: number;
+  workY: number;
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+  walking: boolean;
+  nextWander: number;
+  roomOx: number;
+  roomOy: number;
+  grid: number;
+};
 
 const runtimeChars = new WeakMap<Container, CharNode[]>();
+
+function randRange(a: number, b: number): number {
+  return a + Math.random() * (b - a);
+}
+
+function randomWanderScreen(c: CharNode): { x: number; y: number } {
+  const margin = 1.2;
+  const gx = c.roomOx + margin + Math.random() * (c.grid - margin * 2);
+  const gy = c.roomOy + margin + Math.random() * (c.grid - margin * 2);
+  const p = isoToScreen(gx, gy);
+  const jitter = (c.deskIndex % 5) * 3;
+  return { x: p.x + jitter, y: p.y + (jitter % 7) };
+}
 
 function paint(
   world: Container,
@@ -274,10 +313,11 @@ function paint(
   viewW: number,
   viewH: number,
   rebuild: boolean,
+  deltaMs: number,
 ) {
   if (rebuild) {
+    const prevById = new Map((runtimeChars.get(world) ?? []).map((c) => [c.empId, c]));
     world.removeChildren();
-    runtimeChars.set(world, []);
 
     const v = ASSET_V;
     const floorTex = textures[`/assets/tiles/tile_t1_sm.png?v=${v}`];
@@ -286,8 +326,6 @@ function paint(
     const coffeeTex = textures[`/assets/furniture/coffee_sm.png?v=${v}`];
 
     // Walls → floor → furniture (sorted) → characters (always above furniture).
-    // Characters must not share a sort bucket with desks: a neighbor desk with
-    // higher gx+gy otherwise paints over people at the previous pod.
     const wallLayer = new Container();
     const floorLayer = new Container();
     const propLayer = new Container();
@@ -298,8 +336,8 @@ function paint(
     const props: DrawItem[] = [];
     const chars: CharNode[] = [];
     const roomGapX = 14;
-    // Anchor on the top-face center so the thick tile side hangs downward
     const floorAnchorY = 10 / TILE_SPRITE_H;
+    const now = performance.now();
 
     state.rooms.forEach((room, roomIndex) => {
       const ox = roomIndex * roomGapX;
@@ -331,8 +369,9 @@ function paint(
         const gy = oy + slot.gy;
         const screen = isoToScreen(gx, gy);
 
+        let deskSpr: Sprite | null = null;
         if (deskTex) {
-          const deskSpr = new Sprite(deskTex);
+          deskSpr = new Sprite(deskTex);
           deskSpr.anchor.set(0.5, 0.82);
           deskSpr.x = screen.x;
           deskSpr.y = screen.y + 4;
@@ -341,30 +380,50 @@ function paint(
             deskSpr.scale.set(deskH / deskSpr.texture.height);
           }
           deskSpr.roundPixels = true;
-          // Depth at the desk front edge so the top doesn't bury the sitter
           props.push({ z: depthZ(gx + 0.2, gy + 0.55, 1), node: deskSpr });
         }
 
         const emp = state.employees.find((e) => e.id === desk.employeeId);
         if (emp) {
           const seat = seatOffset(gx, gy);
+          const work = workSeatOffset(gx, gy);
           const seatScreen = isoToScreen(seat.gx, seat.gy);
+          const workScreen = isoToScreen(work.gx, work.gy);
+          const homeX = seatScreen.x;
+          const homeY = seatScreen.y + 2;
+          const workX = workScreen.x;
+          const workY = workScreen.y + 2;
           const role = fallbackRole(emp.role);
           const tex =
             textures[charUrl(role, 'idle')] ?? textures[charUrl('dev', 'idle')];
           if (tex) {
+            const prev = prevById.get(emp.id);
             const char = new Sprite(tex);
             char.anchor.set(0.5, 1);
-            char.x = seatScreen.x;
-            char.y = seatScreen.y + 2;
             char.scale.set(0.92);
             char.roundPixels = true;
             const meta: CharNode = {
               sprite: char,
+              deskSpr,
               empId: emp.id,
               role,
               deskIndex: di,
+              homeX,
+              homeY,
+              workX,
+              workY,
+              x: prev?.x ?? homeX,
+              y: prev?.y ?? homeY,
+              tx: prev?.tx ?? homeX,
+              ty: prev?.ty ?? homeY,
+              walking: prev?.walking ?? false,
+              nextWander: prev?.nextWander ?? now + randRange(800, 2200),
+              roomOx: ox,
+              roomOy: oy,
+              grid,
             };
+            char.x = meta.x;
+            char.y = meta.y;
             chars.push(meta);
             spriteLayer.addChild(char);
           }
@@ -373,8 +432,9 @@ function paint(
 
       if (roomIndex === 0) {
         if (plantTex) {
-          const pgx = ox + grid - 1.4;
-          const pgy = oy + 1.4;
+          const slot = plantPropSlot(grid);
+          const pgx = ox + slot.gx;
+          const pgy = oy + slot.gy;
           const p = isoToScreen(pgx, pgy);
           const plant = new Sprite(plantTex);
           plant.anchor.set(0.5, 1);
@@ -387,15 +447,16 @@ function paint(
           props.push({ z: depthZ(pgx, pgy, 2), node: plant });
         }
         if (coffeeTex) {
-          const cgx = ox + 1.2;
-          const cgy = oy + grid - 2.2;
+          const slot = coffeePropSlot(grid);
+          const cgx = ox + slot.gx;
+          const cgy = oy + slot.gy;
           const p = isoToScreen(cgx, cgy);
           const coffee = new Sprite(coffeeTex);
           coffee.anchor.set(0.5, 1);
           coffee.x = p.x;
           coffee.y = p.y;
           if (coffee.texture.height > 0) {
-            coffee.scale.set(56 / coffee.texture.height);
+            coffee.scale.set(52 / coffee.texture.height);
           }
           coffee.roundPixels = true;
           props.push({ z: depthZ(cgx, cgy, 2), node: coffee });
@@ -416,17 +477,55 @@ function paint(
   }
 
   const chars = runtimeChars.get(world) ?? [];
+  const now = performance.now();
+  const stepScale = Math.min(2.5, deltaMs / 16.67);
+
   for (const c of chars) {
     const emp = state.employees.find((e) => e.id === c.empId);
     if (!emp) continue;
-    let kind: FrameKind = 'idle';
+
+    const bakesDesk = WORK_BAKES_DESK.has(c.role);
     if (emp.status === 'working') {
-      kind = Math.floor(anim) % 2 === 0 ? 'work0' : 'work1';
-    } else {
-      const phase = Math.floor(anim + c.deskIndex) % 8;
-      if (phase < 4) {
-        kind = (['walk0', 'walk1', 'walk2', 'walk3'] as const)[phase]!;
+      c.tx = bakesDesk ? c.workX : c.homeX;
+      c.ty = bakesDesk ? c.workY : c.homeY;
+    } else if (now > c.nextWander) {
+      if (Math.random() < 0.35) {
+        c.tx = c.homeX + randRange(-4, 4);
+        c.ty = c.homeY + randRange(-2, 4);
+      } else {
+        const t = randomWanderScreen(c);
+        c.tx = t.x;
+        c.ty = t.y;
       }
+      c.nextWander = now + randRange(2800, 6000);
+    }
+
+    const dx = c.tx - c.x;
+    const dy = c.ty - c.y;
+    const dist = Math.hypot(dx, dy);
+    const speed = (emp.status === 'working' ? 0.55 : 0.38) * stepScale;
+    if (dist > 1.4) {
+      c.x += (dx / dist) * speed;
+      c.y += (dy / dist) * speed;
+      c.walking = true;
+    } else {
+      c.x = c.tx;
+      c.y = c.ty;
+      c.walking = false;
+    }
+    c.sprite.x = Math.round(c.x);
+    c.sprite.y = Math.round(c.y);
+
+    if (c.deskSpr) {
+      // Sales work sprite already has chair + laptop — hide the empty furniture desk.
+      c.deskSpr.visible = !(emp.status === 'working' && bakesDesk && !c.walking);
+    }
+
+    let kind: FrameKind = 'idle';
+    if (emp.status === 'working' && !c.walking) {
+      kind = Math.floor(anim) % 2 === 0 ? 'work0' : 'work1';
+    } else if (c.walking) {
+      kind = (['walk0', 'walk1', 'walk2', 'walk3'] as const)[Math.floor(anim + c.deskIndex) % 4]!;
     }
     const tex =
       textures[charUrl(c.role, kind)] ??

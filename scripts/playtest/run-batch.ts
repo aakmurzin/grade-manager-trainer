@@ -163,7 +163,10 @@ async function runSession(
 
   const engine = session.getEngineState();
   const view = session.getState();
-  const report = computeManagerReport(engine.decisionLog);
+  const report = computeManagerReport(engine.decisionLog, {
+    finalBudget: engine.budget,
+    bankrupt: engine.bankrupt,
+  });
   const netProfit = engine.history.reduce((s, h) => s + h.netProfit, 0);
   const avoidFlag =
     report.flaggedMoments.find((m) => m.description.toLowerCase().includes('avoidable'))

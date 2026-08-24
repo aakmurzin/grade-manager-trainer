@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { FormEvent, useState } from 'react';
+import { LocaleSelect } from '@/components/LocaleSelect';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -26,14 +29,14 @@ export default function SignupPage() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setPending(false);
-      setError(data.error ?? 'Signup failed');
+      setError(data.error ?? t('auth.signupFailed'));
       return;
     }
 
     const login = await signIn('credentials', { email, password, redirect: false });
     setPending(false);
     if (login?.error) {
-      setError('Account created — please log in.');
+      setError(t('auth.accountCreated'));
       router.push('/login');
       return;
     }
@@ -43,26 +46,27 @@ export default function SignupPage() {
 
   return (
     <main style={{ maxWidth: 420, margin: '60px auto', padding: 24 }}>
-      <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
-        ← Home
-      </Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
+          {t('common.backHome')}
+        </Link>
+        <LocaleSelect variant="inline" />
+      </div>
       <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
-        SIGN UP
+        {t('auth.signUp')}
       </h1>
-      <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-        Creates a trainer account. Grade SSO is Phase 2.
-      </p>
+      <p style={{ color: 'var(--muted)', fontSize: 13 }}>{t('auth.signupHint')}</p>
       <form
         className="panel"
         style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}
         onSubmit={onSubmit}
       >
         <label>
-          <span className="label">EMAIL</span>
+          <span className="label">{t('auth.email')}</span>
           <input className="input" type="email" name="email" required autoComplete="email" />
         </label>
         <label>
-          <span className="label">PASSWORD</span>
+          <span className="label">{t('auth.password')}</span>
           <input
             className="input"
             type="password"
@@ -74,11 +78,12 @@ export default function SignupPage() {
         </label>
         {error && <p style={{ color: 'var(--red)', fontSize: 13, margin: 0 }}>{error}</p>}
         <button type="submit" className="btn" disabled={pending}>
-          {pending ? '…' : 'CREATE ACCOUNT'}
+          {pending ? '…' : t('auth.createAccount')}
         </button>
       </form>
       <p style={{ marginTop: 16, fontSize: 13 }}>
-        <Link href="/login">Log in</Link> · <Link href="/play">Dev Play →</Link>
+        <Link href="/login">{t('auth.haveAccount')}</Link> ·{' '}
+        <Link href="/play">{t('auth.devPlay')}</Link>
       </p>
     </main>
   );

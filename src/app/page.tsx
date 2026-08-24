@@ -1,6 +1,12 @@
+'use client';
+
 import Link from 'next/link';
+import { LocaleSelect } from '@/components/LocaleSelect';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 export default function HomePage() {
+  const { t } = useLocale();
+
   return (
     <main
       style={{
@@ -30,7 +36,7 @@ export default function HomePage() {
             style={{ imageRendering: 'pixelated' }}
           />
           <span className="pixel" style={{ fontSize: 18, color: '#fff' }}>
-            GRADE
+            {t('home.brand')}
           </span>
         </div>
         <h1
@@ -42,27 +48,29 @@ export default function HomePage() {
             lineHeight: 1.6,
           }}
         >
-          BUSINESS TRAINER
+          {t('home.title')}
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.7, margin: '18px 0 28px' }}>
-          Hire people, assign projects, manage risk. End the session with a real P&amp;L and a
-          Manager Report of how you actually decide under pressure.
+          {t('home.blurb')}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link className="btn" href="/login" style={{ textDecoration: 'none' }}>
-            LOG IN
+            {t('home.logIn')}
           </Link>
           <Link className="btn-ghost" href="/signup" style={{ textDecoration: 'none' }}>
-            SIGN UP
+            {t('home.signUp')}
           </Link>
           <Link className="btn-ghost" href="/play" style={{ textDecoration: 'none' }}>
-            DEV PLAY
+            {t('home.devPlay')}
           </Link>
         </div>
+        <div style={{ marginTop: 28, display: 'flex', justifyContent: 'center' }}>
+          <LocaleSelect variant="inline" />
+        </div>
         <p style={{ marginTop: 24, fontSize: 12, color: 'var(--muted2)' }}>
-          <Link href="/history">History</Link>
+          <Link href="/history">{t('home.history')}</Link>
           {' · '}
-          <Link href="/profile">Profile</Link>
+          <Link href="/profile">{t('home.profile')}</Link>
         </p>
       </div>
     </main>

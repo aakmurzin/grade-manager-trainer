@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { FormEvent, useState } from 'react';
+import { LocaleSelect } from '@/components/LocaleSelect';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -22,7 +25,7 @@ export default function LoginPage() {
     });
     setPending(false);
     if (res?.error) {
-      setError('Invalid email or password (or database not configured).');
+      setError(t('auth.loginError'));
       return;
     }
     router.push('/play');
@@ -31,27 +34,27 @@ export default function LoginPage() {
 
   return (
     <main style={{ maxWidth: 420, margin: '60px auto', padding: 24 }}>
-      <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
-        ← Home
-      </Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
+          {t('common.backHome')}
+        </Link>
+        <LocaleSelect variant="inline" />
+      </div>
       <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
-        LOG IN
+        {t('auth.logIn')}
       </h1>
-      <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-        Requires Neon <code>DATABASE_URL</code> + <code>AUTH_SECRET</code>. Or use Dev Play without
-        auth.
-      </p>
+      <p style={{ color: 'var(--muted)', fontSize: 13 }}>{t('auth.loginHint')}</p>
       <form
         className="panel"
         style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 }}
         onSubmit={onSubmit}
       >
         <label>
-          <span className="label">EMAIL</span>
+          <span className="label">{t('auth.email')}</span>
           <input className="input" type="email" name="email" required autoComplete="email" />
         </label>
         <label>
-          <span className="label">PASSWORD</span>
+          <span className="label">{t('auth.password')}</span>
           <input
             className="input"
             type="password"
@@ -62,11 +65,12 @@ export default function LoginPage() {
         </label>
         {error && <p style={{ color: 'var(--red)', fontSize: 13, margin: 0 }}>{error}</p>}
         <button type="submit" className="btn" disabled={pending}>
-          {pending ? '…' : 'LOG IN'}
+          {pending ? '…' : t('auth.logIn')}
         </button>
       </form>
       <p style={{ marginTop: 16, fontSize: 13 }}>
-        No account? <Link href="/signup">Sign up</Link> · <Link href="/play">Dev Play →</Link>
+        {t('auth.noAccount')} <Link href="/signup">{t('auth.signUpLink')}</Link> ·{' '}
+        <Link href="/play">{t('auth.devPlay')}</Link>
       </p>
     </main>
   );

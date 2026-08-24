@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import {
   COMPANY_PROFILES,
   QUARTER_MINUTES_1X,
-  ROLE_LABELS,
+  ROOM_COSTS,
   SECONDS_PER_WEEK_1X,
   SESSION_QUARTERS,
   WEEKS_PER_QUARTER,
@@ -16,6 +16,7 @@ import {
   deliveryRoleFor,
   gameReducer,
   leadAssignOptions,
+  maxDesksForOffice,
   projectAssignOptions,
   terminationCost,
   type CompanyType,
@@ -27,11 +28,17 @@ import { computeManagerReport } from '@/game/report/computeManagerReport';
 import { PLTable } from '@/components/PLTable';
 import { ManagerReportView } from '@/components/ManagerReportView';
 import { OfficeCanvas } from '@/render/OfficeCanvas';
+import { LocaleSelect } from '@/components/LocaleSelect';
+import { OnboardingModal, OnboardingPanel } from '@/components/OnboardingGuide';
+import { onboardingCopy, type AppLocale } from '@/i18n/archetypes';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { moneyLocale } from '@/i18n/uiCatalog';
+import { translateEventMessage } from '@/i18n/events';
 
 type Phase = 'select' | 'play' | 'report';
 
-function money(n: number) {
-  return n.toLocaleString('en-US', {
+function money(n: number, locale: AppLocale) {
+  return n.toLocaleString(moneyLocale(locale), {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0,
@@ -58,8 +65,27 @@ function WorkProgressBar({
   );
 }
 
+function roleLabel(
+  t: (key: string, params?: Record<string, string | number>) => string,
+  role: string,
+) {
+  const key = `roles.${role}`;
+  const label = t(key);
+  return label === key ? role : label;
+}
+
+function statusLabel(
+  t: (key: string, params?: Record<string, string | number>) => string,
+  status: string,
+) {
+  const key = `status.${status}`;
+  const label = t(key);
+  return label === key ? status : label;
+}
+
 export function PlayApp() {
   const { data: auth } = useSession();
+  const { t } = useLocale();
   const [phase, setPhase] = useState<Phase>('select');
   const [companyType, setCompanyType] = useState<CompanyType>('design_agency');
   const [speed, setSpeed] = useState<SpeedMultiplier>(1);
@@ -95,21 +121,27 @@ export function PlayApp() {
     return (
       <main style={{ maxWidth: 760, margin: '40px auto', padding: 24 }}>
         <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
-          ← Home
+          {t('common.backHome')}
         </Link>
         <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
-          NEW SESSION
+          {t('select.title')}
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>
           {auth?.user
-            ? `Signed in as ${auth.user.email}`
-            : 'Playing locally (Dev). Sign in to persist sessions.'}{' '}
-          At 1×: {SESSION_QUARTERS} quarters × {WEEKS_PER_QUARTER} weeks · ~{Math.round(QUARTER_MINUTES_1X)} min/quarter (
-          {SECONDS_PER_WEEK_1X}s/week). Play / Pause / 1x–3x during the session.
+            ? t('select.signedIn', { email: auth.user.email ?? '' })
+            : t('select.localPlay')}{' '}
+          {t('select.timing', {
+            quarters: SESSION_QUARTERS,
+            weeks: WEEKS_PER_QUARTER,
+            minutes: Math.round(QUARTER_MINUTES_1X),
+            seconds: SECONDS_PER_WEEK_1X,
+          })}
         </p>
 
+        <LocaleSelect />
+
         <h2 className="pixel" style={{ fontSize: 9, marginTop: 28 }}>
-          DEV LEVEL
+          {t('select.devLevel')}
         </h2>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           {(['trainee', 'manager', 'director'] as ManagerLevel[]).map((lvl) => (
@@ -125,13 +157,13 @@ export function PlayApp() {
                 }
               }}
             >
-              {lvl}
+              {t(`levels.${lvl}`)}
             </button>
           ))}
         </div>
 
         <h2 className="pixel" style={{ fontSize: 9, marginTop: 28 }}>
-          COMPANY
+          {t('select.company')}
         </h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 }}>
           {(Object.keys(COMPANY_PROFILES) as CompanyType[]).map((id) => {
@@ -154,12 +186,13 @@ export function PlayApp() {
                 }}
               >
                 <div className="pixel" style={{ fontSize: 8, color: 'var(--lblue)' }}>
-                  {c.label}
+                  {t(`companies.${id}`)}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
-                      {c.engagement.replaceAll('_', ' ')} · {c.leadFrequency} leads
-                      {id === 'design_agency' ? ' · volume' : ''}
-                      {locked ? ` · needs ${c.unlockLevel}` : ''}
+                  {t(`engagement.${c.engagement}`)} ·{' '}
+                  {t('select.leads', { n: t(`frequency.${c.leadFrequency}`) })}
+                  {id === 'design_agency' ? ` · ${t('select.volume')}` : ''}
+                  {locked ? ` · ${t('select.needs', { level: t(`levels.${c.unlockLevel}`) })}` : ''}
                 </div>
               </button>
             );
@@ -167,7 +200,7 @@ export function PlayApp() {
         </div>
 
         <h2 className="pixel" style={{ fontSize: 9, marginTop: 28 }}>
-          START SPEED
+          {t('select.startSpeed')}
         </h2>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           {([1, 2, 3] as SpeedMultiplier[]).map((s) => (
@@ -183,8 +216,10 @@ export function PlayApp() {
           ))}
         </div>
 
+        <OnboardingPanel />
+
         <button type="button" className="btn" style={{ marginTop: 32 }} onClick={() => void start()}>
-          START
+          {t('select.start')}
         </button>
       </main>
     );
@@ -227,14 +262,22 @@ function GameSession({
   onRestart: () => void;
   showReport: boolean;
 }) {
+  const { t } = useLocale();
   const [state, dispatch] = useReducer(gameReducer, undefined, () =>
     createInitialState({ companyType, speed, managerLevel }),
   );
   const [tab, setTab] = useState<'recruit' | 'sales' | 'tasks' | 'team'>('recruit');
   const [saved, setSaved] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const report = useMemo(
-    () => (state.gameOver ? computeManagerReport(state.decisionLog) : null),
-    [state.gameOver, state.decisionLog],
+    () =>
+      state.gameOver
+        ? computeManagerReport(state.decisionLog, {
+            finalBudget: state.budget,
+            bankrupt: state.bankrupt,
+          })
+        : null,
+    [state.gameOver, state.decisionLog, state.budget, state.bankrupt],
   );
 
   useEffect(() => {
@@ -275,31 +318,31 @@ function GameSession({
     return (
       <main style={{ maxWidth: 900, margin: '24px auto', padding: 24 }}>
         <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)' }}>
-          SESSION COMPLETE
+          {t('complete.title')}
         </h1>
         {state.bankrupt && (
-          <p style={{ color: 'var(--red)' }}>Bankrupt — budget went negative.</p>
+          <p style={{ color: 'var(--red)' }}>{t('complete.bankrupt')}</p>
         )}
         {remoteSessionId && (
           <p style={{ color: 'var(--muted)', fontSize: 13 }}>
-            {saved ? 'Report saved to server.' : 'Saving report…'}
+            {saved ? t('complete.saved') : t('complete.saving')}
           </p>
         )}
         <div style={{ marginTop: 20 }}>
           <PLTable history={state.history} includeTotal />
         </div>
         <div style={{ marginTop: 28 }}>
-          <ManagerReportView report={report} title="LAST SESSION" />
+          <ManagerReportView report={report} title={t('report.lastSession')} />
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
           <button type="button" className="btn" onClick={onRestart}>
-            PLAY AGAIN
+            {t('complete.playAgain')}
           </button>
           <Link className="btn-ghost" href="/history" style={{ textDecoration: 'none' }}>
-            HISTORY
+            {t('complete.history')}
           </Link>
           <Link className="btn-ghost" href="/" style={{ textDecoration: 'none' }}>
-            HOME
+            {t('complete.home')}
           </Link>
         </div>
       </main>
@@ -314,6 +357,9 @@ function GameSession({
       setTab={setTab}
       showPL={showPL}
       onClosePL={() => setPlSeenCount(state.history.length)}
+      showHelp={showHelp}
+      onOpenHelp={() => setShowHelp(true)}
+      onCloseHelp={() => setShowHelp(false)}
     />
   );
 }
@@ -325,6 +371,9 @@ function OfficeShell({
   setTab,
   showPL,
   onClosePL,
+  showHelp,
+  onOpenHelp,
+  onCloseHelp,
 }: {
   state: GameState;
   dispatch: React.Dispatch<import('@/game').GameAction>;
@@ -332,11 +381,18 @@ function OfficeShell({
   setTab: (t: 'recruit' | 'sales' | 'tasks' | 'team') => void;
   showPL: boolean;
   onClosePL: () => void;
+  showHelp: boolean;
+  onOpenHelp: () => void;
+  onCloseHelp: () => void;
 }) {
+  const { locale, t } = useLocale();
   const promo = state.pendingPromotions[0];
   const promoEmp = promo ? state.employees.find((e) => e.id === promo.employeeId) : null;
-  const deliveryLabel = ROLE_LABELS[deliveryRoleFor(state.companyType)];
+  const deliveryRole = deliveryRoleFor(state.companyType);
+  const deliveryLabel = roleLabel(t, deliveryRole);
   const usesStack = companyUsesStack(state.companyType);
+  const helpLabel = onboardingCopy(locale).help;
+  const fmt = (n: number) => money(n, locale);
 
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
@@ -355,30 +411,30 @@ function OfficeShell({
         }}
       >
         <div>
-          <span style={{ color: 'var(--muted)' }}>COMPANY</span>
+          <span style={{ color: 'var(--muted)' }}>{t('hud.company')}</span>
           <div style={{ color: '#fff', marginTop: 4 }}>
-            {COMPANY_PROFILES[state.companyType].label}
+            {t(`companies.${state.companyType}`)}
           </div>
         </div>
         <div>
-          <span style={{ color: 'var(--muted)' }}>BUDGET</span>
+          <span style={{ color: 'var(--muted)' }}>{t('hud.budget')}</span>
           <div
             style={{
               color: state.budget < 0 ? 'var(--red)' : 'var(--green)',
               marginTop: 4,
             }}
           >
-            {money(state.budget)}
+            {fmt(state.budget)}
           </div>
         </div>
         <div>
-          <span style={{ color: 'var(--muted)' }}>WEEK</span>
+          <span style={{ color: 'var(--muted)' }}>{t('hud.week')}</span>
           <div style={{ marginTop: 4 }}>
             Q{state.quarter} · W{((state.week - 1) % 12) + 1}
           </div>
         </div>
         <div>
-          <span style={{ color: 'var(--muted)' }}>REP</span>
+          <span style={{ color: 'var(--muted)' }}>{t('hud.rep')}</span>
           <div style={{ marginTop: 4 }}>{state.reputation}</div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -403,7 +459,17 @@ function OfficeShell({
             style={{ padding: '8px 10px', fontSize: 8 }}
             onClick={() => dispatch({ type: 'SET_PAUSED', paused: !state.paused })}
           >
-            {state.paused ? 'PLAY' : 'PAUSE'}
+            {state.paused ? t('hud.play') : t('hud.pause')}
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ padding: '8px 12px', fontSize: 8 }}
+            aria-label={t('common.howToPlay')}
+            title={t('common.howToPlay')}
+            onClick={onOpenHelp}
+          >
+            {helpLabel}
           </button>
         </div>
       </header>
@@ -420,14 +486,14 @@ function OfficeShell({
             gap: 12,
           }}
         >
-          <span>{state.lastEventMessage}</span>
+          <span>{translateEventMessage(locale, state.lastEventMessage)}</span>
           <button
             type="button"
             className="btn-ghost"
             style={{ padding: '4px 8px', fontSize: 7 }}
             onClick={() => dispatch({ type: 'CLEAR_EVENT_MESSAGE' })}
           >
-            OK
+            {t('common.ok')}
           </button>
         </div>
       )}
@@ -445,31 +511,78 @@ function OfficeShell({
           }}
         >
           <div className="pixel" style={{ fontSize: 9, color: 'var(--lblue)' }}>
-            OFFICE
+            {t('office.title')}
           </div>
           <div style={{ flex: 1, minHeight: 300, border: '2px solid var(--border)' }}>
             <OfficeCanvas state={state} />
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {state.rooms.map((room) => (
-              <button
-                key={room.id}
-                type="button"
-                className="btn-ghost"
-                style={{ padding: '8px 10px', fontSize: 7 }}
-                onClick={() => dispatch({ type: 'BUILD_DESK', roomId: room.id })}
-              >
-                {room.id.toUpperCase()} DESK ${room.deskCost}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ padding: '8px 10px', fontSize: 7 }}
-              onClick={() => dispatch({ type: 'BUILD_ROOM' })}
-            >
-              OPEN ROOM
-            </button>
+            {state.rooms.map((room) => {
+              const deskCap = maxDesksForOffice(state.totalRevenue);
+              const deskDisabled =
+                room.desks.length >= deskCap || state.budget < room.deskCost;
+              return (
+                <button
+                  key={room.id}
+                  type="button"
+                  className="btn-ghost"
+                  disabled={deskDisabled}
+                  title={
+                    room.desks.length >= deskCap
+                      ? t('office.roomFull', { cap: deskCap })
+                      : state.budget < room.deskCost
+                        ? t('office.needCash', { amount: fmt(room.deskCost) })
+                        : t('office.addDesk', { amount: fmt(room.deskCost) })
+                  }
+                  style={{
+                    padding: '8px 10px',
+                    fontSize: 7,
+                    opacity: deskDisabled ? 0.45 : 1,
+                    cursor: deskDisabled ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() => dispatch({ type: 'BUILD_DESK', roomId: room.id })}
+                >
+                  {t('office.desk', { room: room.id.toUpperCase(), cost: room.deskCost })}
+                </button>
+              );
+            })}
+            {(() => {
+              const last = state.rooms[state.rooms.length - 1]!;
+              const deskCap = maxDesksForOffice(state.totalRevenue);
+              const roomCost = ROOM_COSTS[state.rooms.length] ?? 11_500;
+              const maxRooms = state.rooms.length >= 4;
+              const needDesks = last.desks.length < deskCap;
+              const needCash = state.budget < roomCost;
+              const roomDisabled = maxRooms || needDesks || needCash;
+              const roomTitle = maxRooms
+                ? t('office.maxRooms')
+                : needDesks
+                  ? t('office.fillRoomFirst', {
+                      have: last.desks.length,
+                      cap: deskCap,
+                    })
+                  : needCash
+                    ? t('office.needCash', { amount: fmt(roomCost) })
+                    : t('office.openRoomFor', { amount: fmt(roomCost) });
+              return (
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={roomDisabled}
+                  title={roomTitle}
+                  style={{
+                    padding: '8px 10px',
+                    fontSize: 7,
+                    opacity: roomDisabled ? 0.45 : 1,
+                    cursor: roomDisabled ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={() => dispatch({ type: 'BUILD_ROOM' })}
+                >
+                  {t('office.openRoom', { cost: roomCost })}
+                  {needDesks && !maxRooms ? ` · ${last.desks.length}/${deskCap}` : ''}
+                </button>
+              );
+            })()}
           </div>
         </section>
 
@@ -483,23 +596,23 @@ function OfficeShell({
           }}
         >
           <div style={{ display: 'flex', borderBottom: '2px solid var(--border)' }}>
-            {(['recruit', 'sales', 'tasks', 'team'] as const).map((t) => (
+            {(['recruit', 'sales', 'tasks', 'team'] as const).map((tabId) => (
               <button
-                key={t}
+                key={tabId}
                 type="button"
-                onClick={() => setTab(t)}
+                onClick={() => setTab(tabId)}
                 className="pixel"
                 style={{
                   flex: 1,
                   padding: '12px 4px',
                   fontSize: 7,
-                  background: tab === t ? 'var(--panel)' : 'transparent',
-                  color: tab === t ? 'var(--lblue)' : 'var(--muted)',
+                  background: tab === tabId ? 'var(--panel)' : 'transparent',
+                  color: tab === tabId ? 'var(--lblue)' : 'var(--muted)',
                   border: 'none',
                   cursor: 'pointer',
                 }}
               >
-                {t.toUpperCase()}
+                {t(`tabs.${tabId}`)}
               </button>
             ))}
           </div>
@@ -508,11 +621,12 @@ function OfficeShell({
               <>
                 {Object.entries(state.roleHireCooldown).some(([, w]) => (w ?? 0) > 0) && (
                   <p style={{ color: 'var(--yellow)', fontSize: 12, marginBottom: 10 }}>
-                    Hire cooldown:{' '}
-                    {Object.entries(state.roleHireCooldown)
-                      .filter(([, w]) => (w ?? 0) > 0)
-                      .map(([role, w]) => `${role} ${w}w`)
-                      .join(' · ')}
+                    {t('recruit.hireCooldown', {
+                      list: Object.entries(state.roleHireCooldown)
+                        .filter(([, w]) => (w ?? 0) > 0)
+                        .map(([role, w]) => `${roleLabel(t, role)} ${w}w`)
+                        .join(' · '),
+                    })}
                   </p>
                 )}
                 <button
@@ -521,7 +635,7 @@ function OfficeShell({
                   style={{ marginBottom: 12, width: '100%' }}
                   onClick={() => dispatch({ type: 'REROLL_CANDIDATES' })}
                 >
-                  REROLL
+                  {t('recruit.reroll')}
                 </button>
                 {state.candidates.map((c) => {
                   const tierKey =
@@ -536,10 +650,10 @@ function OfficeShell({
                     <div key={c.id} className="panel" style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                         <strong>{c.name}</strong>
-                        <span style={{ color: 'var(--green)' }}>{money(c.salary)}</span>
+                        <span style={{ color: 'var(--green)' }}>{fmt(c.salary)}</span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0' }}>
-                        {ROLE_LABELS[c.role] ?? c.role}
+                        {roleLabel(t, c.role)}
                         {c.stack ? ` · ${c.stack}` : ''}
                         {c.domain ? ` · ${c.domain}` : ''}
                       </div>
@@ -557,7 +671,7 @@ function OfficeShell({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`/assets/ui/tier_${tierKey}_sm.png?v=20`}
-                          alt={c.tier}
+                          alt={t(`tiers.${c.tier}`)}
                           width={36}
                           height={36}
                           style={{
@@ -571,10 +685,10 @@ function OfficeShell({
                             className="pixel"
                             style={{ fontSize: 8, color: tierColor, letterSpacing: 1 }}
                           >
-                            {c.tier.toUpperCase()}
+                            {t(`tiers.${c.tier}`)}
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                            skill tier
+                            {t('tiers.skillTier')}
                           </div>
                         </div>
                       </div>
@@ -584,7 +698,7 @@ function OfficeShell({
                         style={{ width: '100%', fontSize: 8, padding: 10 }}
                         onClick={() => dispatch({ type: 'HIRE', candidateId: c.id })}
                       >
-                        HIRE
+                        {t('recruit.hire')}
                       </button>
                     </div>
                   );
@@ -594,7 +708,7 @@ function OfficeShell({
             {tab === 'sales' && (
               <>
                 {state.leads.length === 0 && (
-                  <p style={{ color: 'var(--muted)' }}>No leads yet — wait for the week tick.</p>
+                  <p style={{ color: 'var(--muted)' }}>{t('sales.empty')}</p>
                 )}
                 {state.leads.some((l) => l.status === 'queued') &&
                   state.employees.some((e) => e.role === 'sales') &&
@@ -609,8 +723,7 @@ function OfficeShell({
                         lineHeight: 1.4,
                       }}
                     >
-                      All Sales are busy and the queue is growing — check Team morale, Recruit
-                      another Sales, or watch budget burn instead of waiting idle.
+                      {t('sales.salesBusyHint')}
                     </p>
                   )}
                 {state.leads.map((l) => {
@@ -621,24 +734,24 @@ function OfficeShell({
                     <div key={l.id} className="panel" style={{ marginBottom: 10 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span>{l.domain}</span>
-                        <strong style={{ color: 'var(--green)' }}>{money(l.value)}</strong>
+                        <strong style={{ color: 'var(--green)' }}>{fmt(l.value)}</strong>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 0' }}>
                         {l.status === 'queued' && (
                           <>
-                            Waiting for Sales · close in {l.durationWeeks}w once assigned
-                            {l.idleWeeks > 0 ? ` · queued ${l.idleWeeks}w` : ''}
+                            {t('sales.waiting', { weeks: l.durationWeeks })}
+                            {l.idleWeeks > 0 ? t('sales.queued', { weeks: l.idleWeeks }) : ''}
                           </>
                         )}
                         {l.status === 'inprogress' && (
                           <>
-                            Sales closing
+                            {t('sales.closing')}
                             {assignee ? ` · ${assignee.name}` : ''} · {Math.round(l.progress)}% ·{' '}
-                            {left}w left of {l.durationWeeks}w
-                            {l.idleWeeks > 0 ? ` · waited ${l.idleWeeks}w` : ''}
+                            {t('sales.leftOf', { left, total: l.durationWeeks })}
+                            {l.idleWeeks > 0 ? t('sales.waited', { weeks: l.idleWeeks }) : ''}
                           </>
                         )}
-                        {opts.mismatchOnly ? ' · domain mismatch' : ''}
+                        {opts.mismatchOnly ? t('sales.domainMismatch') : ''}
                       </div>
                       {l.status === 'inprogress' && (
                         <WorkProgressBar progress={l.progress} variant="lead" />
@@ -647,7 +760,7 @@ function OfficeShell({
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                           {!opts.canAssign && (
                             <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>
-                              No free Sales capacity
+                              {t('sales.noCapacity')}
                             </p>
                           )}
                           {opts.canAssign && !opts.mismatchOnly && (
@@ -660,7 +773,7 @@ function OfficeShell({
                                 dispatch({ type: 'ASSIGN_LEAD', leadId: l.id });
                               }}
                             >
-                              ASSIGN SALES
+                              {t('sales.assign')}
                             </button>
                           )}
                           {opts.mismatchOnly && (
@@ -674,7 +787,7 @@ function OfficeShell({
                                   dispatch({ type: 'ASSIGN_LEAD', leadId: l.id });
                                 }}
                               >
-                                ASSIGN ANYWAY (MISMATCH)
+                                {t('sales.assignAnyway')}
                               </button>
                               <button
                                 type="button"
@@ -682,7 +795,7 @@ function OfficeShell({
                                 style={{ width: '100%', fontSize: 7, padding: 10 }}
                                 onClick={() => dispatch({ type: 'SKIP_LEAD', leadId: l.id })}
                               >
-                                SKIP — WAIT FOR MATCH
+                                {t('sales.skipWait')}
                               </button>
                             </>
                           )}
@@ -696,7 +809,7 @@ function OfficeShell({
             {tab === 'tasks' && (
               <>
                 {state.projects.length === 0 && (
-                  <p style={{ color: 'var(--muted)' }}>No projects — close leads first.</p>
+                  <p style={{ color: 'var(--muted)' }}>{t('tasks.empty')}</p>
                 )}
                 {state.projects.map((p) => {
                   const opts = projectAssignOptions(state, p.id);
@@ -708,30 +821,30 @@ function OfficeShell({
                         <span>
                           {usesStack && p.stack ? `${p.domain} · ${p.stack}` : p.domain}
                         </span>
-                        <strong style={{ color: 'var(--green)' }}>{money(p.value)}</strong>
+                        <strong style={{ color: 'var(--green)' }}>{fmt(p.value)}</strong>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0 0' }}>
-                        {p.engagement.replaceAll('_', ' ')}
+                        {t(`engagement.${p.engagement}`)}
                         {p.status === 'queued' && (
                           <>
                             {' '}
-                            · Waiting for {deliveryLabel} · {p.durationWeeks}w to ship once assigned
-                            {p.idleWeeks > 0 ? ` · queued ${p.idleWeeks}w` : ''}
+                            · {t('tasks.waiting', { role: deliveryLabel, weeks: p.durationWeeks })}
+                            {p.idleWeeks > 0 ? t('sales.queued', { weeks: p.idleWeeks }) : ''}
                           </>
                         )}
                         {p.status === 'inprogress' && (
                           <>
                             {' '}
-                            · {deliveryLabel} shipping
+                            · {t('tasks.shipping', { role: deliveryLabel })}
                             {assignee ? ` · ${assignee.name}` : ''} · {Math.round(p.progress)}% ·{' '}
-                            {left}w left of {p.durationWeeks}w
-                            {p.idleWeeks > 0 ? ` · waited ${p.idleWeeks}w` : ''}
+                            {t('sales.leftOf', { left, total: p.durationWeeks })}
+                            {p.idleWeeks > 0 ? t('sales.waited', { weeks: p.idleWeeks }) : ''}
                           </>
                         )}
                         {opts.mismatchOnly
                           ? usesStack
-                            ? ' · stack mismatch'
-                            : ' · domain mismatch'
+                            ? t('tasks.stackMismatch')
+                            : t('tasks.domainMismatch')
                           : ''}
                       </div>
                       {p.status === 'inprogress' && (
@@ -741,7 +854,7 @@ function OfficeShell({
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
                           {!opts.canAssign && (
                             <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0 }}>
-                              No idle {deliveryLabel}
+                              {t('tasks.noIdle', { role: deliveryLabel })}
                             </p>
                           )}
                           {opts.canAssign && !opts.mismatchOnly && (
@@ -754,7 +867,7 @@ function OfficeShell({
                                 dispatch({ type: 'ASSIGN_PROJECT', projectId: p.id });
                               }}
                             >
-                              ASSIGN {deliveryLabel.toUpperCase()}
+                              {t('tasks.assign', { role: deliveryLabel.toUpperCase() })}
                             </button>
                           )}
                           {opts.mismatchOnly && (
@@ -768,7 +881,7 @@ function OfficeShell({
                                   dispatch({ type: 'ASSIGN_PROJECT', projectId: p.id });
                                 }}
                               >
-                                ASSIGN ANYWAY (MISMATCH)
+                                {t('tasks.assignAnyway')}
                               </button>
                               <button
                                 type="button"
@@ -778,7 +891,7 @@ function OfficeShell({
                                   dispatch({ type: 'SKIP_PROJECT', projectId: p.id })
                                 }
                               >
-                                SKIP — WAIT FOR MATCH
+                                {t('tasks.skipWait')}
                               </button>
                             </>
                           )}
@@ -792,7 +905,7 @@ function OfficeShell({
             {tab === 'team' && (
               <>
                 {state.employees.length === 0 && (
-                  <p style={{ color: 'var(--muted)' }}>No employees — hire from Recruit.</p>
+                  <p style={{ color: 'var(--muted)' }}>{t('team.empty')}</p>
                 )}
                 {state.employees.map((e) => {
                   const heart =
@@ -804,12 +917,14 @@ function OfficeShell({
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <strong>{e.name}</strong>
                         <span style={{ color: 'var(--muted)', fontSize: 12 }}>
-                          {money(e.salary)}/q
+                          {t('team.perQuarter', { amount: fmt(e.salary) })}
                         </span>
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)', margin: '6px 0' }}>
-                        {ROLE_LABELS[e.role] ?? e.role} · {e.status}
-                        {e.recruiterCharges != null ? ` · charges ${e.recruiterCharges}` : ''}
+                        {roleLabel(t, e.role)} · {statusLabel(t, e.status)}
+                        {e.recruiterCharges != null
+                          ? t('team.charges', { n: e.recruiterCharges })
+                          : ''}
                       </div>
                       <div
                         style={{
@@ -825,7 +940,7 @@ function OfficeShell({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`/assets/ui/tier_${tierKey}_sm.png?v=20`}
-                          alt={e.tier}
+                          alt={t(`tiers.${e.tier}`)}
                           width={32}
                           height={32}
                           style={{ imageRendering: 'pixelated' }}
@@ -833,14 +948,14 @@ function OfficeShell({
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`/assets/ui/heart_${heart}_sm.png?v=17`}
-                          alt="morale"
+                          alt={t('team.morale')}
                           width={28}
                           height={28}
                           style={{ imageRendering: 'pixelated' }}
                         />
                         <div style={{ fontSize: 12 }}>
                           <span className="pixel" style={{ fontSize: 7, color: 'var(--muted)' }}>
-                            MORALE{' '}
+                            {t('team.morale')}{' '}
                           </span>
                           <strong>{Math.round(e.satisfaction)}</strong>
                         </div>
@@ -851,7 +966,7 @@ function OfficeShell({
                         style={{ width: '100%', fontSize: 8 }}
                         onClick={() => dispatch({ type: 'GIVE_BONUS', employeeId: e.id })}
                       >
-                        BONUS $300
+                        {t('team.bonus')}
                       </button>
                       {(() => {
                         const cost = terminationCost(state, e.id);
@@ -870,14 +985,19 @@ function OfficeShell({
                             disabled={!cost.canAfford}
                             onClick={() => {
                               const warn = cost.brokeLongDelivery
-                                ? 'This breaks an active long-delivery contract (−8 rep). Fire anyway?'
-                                : `Fire ${e.name}? Pro-rata ${money(cost.proratedPay)} + severance ${money(cost.severanceCost)} = ${money(cost.total)}`;
+                                ? t('team.fireBreakConfirm')
+                                : t('team.fireConfirm', {
+                                    name: e.name,
+                                    prorata: fmt(cost.proratedPay),
+                                    severance: fmt(cost.severanceCost),
+                                    total: fmt(cost.total),
+                                  });
                               if (typeof window !== 'undefined' && !window.confirm(warn)) return;
                               dispatch({ type: 'TERMINATE_EMPLOYEE', employeeId: e.id });
                             }}
                           >
-                            FIRE · {money(cost.total)}
-                            {cost.brokeLongDelivery ? ' · breaks LD' : ''}
+                            {t('team.fire', { amount: fmt(cost.total) })}
+                            {cost.brokeLongDelivery ? t('team.breaksLd') : ''}
                           </button>
                         );
                       })()}
@@ -905,11 +1025,15 @@ function OfficeShell({
         >
           <div className="panel" style={{ maxWidth: 420, width: '100%' }}>
             <h2 className="pixel" style={{ fontSize: 10, color: 'var(--lblue)' }}>
-              PROMOTION
+              {t('promo.title')}
             </h2>
             <p style={{ lineHeight: 1.6 }}>
-              <strong>{promoEmp.name}</strong> asks for {promo.fromTier} → {promo.toTier}. Salary +
-              {money(promo.salaryDelta)}.
+              {t('promo.body', {
+                name: promoEmp.name,
+                from: t(`tiers.${promo.fromTier}`),
+                to: t(`tiers.${promo.toTier}`),
+                delta: fmt(promo.salaryDelta),
+              })}
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button
@@ -919,7 +1043,7 @@ function OfficeShell({
                   dispatch({ type: 'PROMOTION_ACCEPT', employeeId: promo.employeeId })
                 }
               >
-                PROMOTE
+                {t('promo.promote')}
               </button>
               <button
                 type="button"
@@ -928,7 +1052,7 @@ function OfficeShell({
                   dispatch({ type: 'PROMOTION_DECLINE', employeeId: promo.employeeId })
                 }
               >
-                DECLINE
+                {t('promo.decline')}
               </button>
             </div>
           </div>
@@ -958,14 +1082,16 @@ function OfficeShell({
               borderRadius: 4,
             }}
           >
-            <h2 style={{ fontFamily: 'var(--font-ui)', marginTop: 0 }}>Quarter P&amp;L</h2>
+            <h2 style={{ fontFamily: 'var(--font-ui)', marginTop: 0 }}>{t('pl.title')}</h2>
             <PLTable history={state.history} light />
             <button type="button" className="btn" style={{ marginTop: 16 }} onClick={onClosePL}>
-              CONTINUE
+              {t('common.continue')}
             </button>
           </div>
         </div>
       )}
+
+      <OnboardingModal open={showHelp} onClose={onCloseHelp} />
     </div>
   );
 }

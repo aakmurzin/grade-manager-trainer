@@ -135,7 +135,10 @@ export async function PUT(req: Request) {
         createdAt: e.createdAt ?? new Date().toISOString(),
       }) as DecisionLogEntry,
   );
-  const report = computeManagerReport(entries);
+  const report = computeManagerReport(entries, {
+    finalBudget: parsed.data.finalBudget,
+    bankrupt: parsed.data.bankrupt,
+  });
 
   await db
     .update(sessions)

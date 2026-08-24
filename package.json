@@ -17,14 +17,14 @@
     "playtest:design": "PLAYTEST_SCOPE=design PLAYTEST_N=12 PLAYTEST_AGENT=reasonable tsx --tsconfig tsconfig.json scripts/playtest/run-batch.ts"
   },
   "engines": {
-    "node": ">=20"
+    "node": "24.x"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
     "@neondatabase/serverless": "^1.0.1",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.2",
-    "next": "^15.3.3",
+    "next": "15.5.23",
     "next-auth": "^5.0.0-beta.28",
     "pixi.js": "^8.9.2",
     "react": "^19.1.0",

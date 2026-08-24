@@ -95,7 +95,10 @@ function withEvidence(raw: number, samples: number, minSamples: number, unproven
   return unproven + (raw - unproven) * t;
 }
 
-export function computeManagerReport(log: DecisionLogEntry[]): ManagerReportResult {
+export function computeManagerReport(
+  log: DecisionLogEntry[],
+  opts?: { finalBudget?: number; bankrupt?: boolean },
+): ManagerReportResult {
   const starts = ofType(log, 'session_start');
   const hires = ofType(log, 'hire');
   const assigns = ofType(log, 'assign_project');
@@ -122,7 +125,9 @@ export function computeManagerReport(log: DecisionLogEntry[]): ManagerReportResu
 
   const startBudget = starts[0]?.payload.startBudget ?? 10_000;
   const lastSnap = snapshots[snapshots.length - 1];
-  const endBudget = lastSnap?.payload.budget ?? startBudget;
+  // Prefer authoritative final budget (EOQ payroll can bankrupt after a positive last snap — A61).
+  const endBudget =
+    opts?.finalBudget != null ? opts.finalBudget : (lastSnap?.payload.budget ?? startBudget);
 
   const workAssigns = assigns.length + leadAssigns.length;
   const activityIndex = activityFromLog({
@@ -311,6 +316,16 @@ export function computeManagerReport(log: DecisionLogEntry[]): ManagerReportResu
     flagged.push({
       week: n.week,
       description: `Budget near bankruptcy ($${Math.round(n.payload.budget)} / start $${n.payload.startBudget})`,
+      axis: 'cashflow_discipline',
+    });
+  }
+  const bankrupt = opts?.bankrupt === true || endBudget < 0;
+  if (bankrupt) {
+    if (cashRaw == null) cashRaw = 20;
+    else cashRaw = Math.min(cashRaw, 20);
+    flagged.push({
+      week: lastSnap?.week ?? 0,
+      description: `Company went bankrupt (final budget $${Math.round(endBudget)})`,
       axis: 'cashflow_discipline',
     });
   }
@@ -649,12 +664,5 @@ function avoidableMismatchRate(
   return { rate: avoidable / forced, forced, avoidable };
 }
 
-export function archetypeBlurb(archetype: ManagerArchetype | null): string | null {
-  if (archetype === 'hoarder') {
-    return 'Ты отлично защищаешь бюджет — но безопасность, которую ты копишь, не превращается в рост. Простаивающая команда стоит так же дорого, как и риск, просто медленнее и незаметнее.';
-  }
-  if (archetype === 'insufficient_data') {
-    return 'Пока рано делать выводы — сыграй ещё.';
-  }
-  return null;
-}
+export { archetypeBlurbForLocale as archetypeBlurb } from '@/i18n/archetypes';
+export type { AppLocale } from '@/i18n/archetypes';

@@ -121,7 +121,7 @@ export const ROLE_UNLOCK: Record<RoleId, ManagerLevel> = {
   marketer: 'manager',
   lead_gen: 'manager',
   team_lead: 'manager',
-  accountant: 'director',
+  accountant: 'manager',
 };
 
 export const ROLE_LABELS: Record<RoleId, string> = {
@@ -341,6 +341,13 @@ export const DESK_BASE_COST = 1000;
 export const DESK_COST_STEP = 500;
 
 export const OFFICE_TIER_DESKS = [6, 9, 12] as const;
+
+/** Desk cap for the current office wing — scales with cumulative revenue. */
+export function maxDesksForOffice(totalRevenue: number): number {
+  if (totalRevenue >= 15_000) return OFFICE_TIER_DESKS[2];
+  if (totalRevenue >= 5_000) return OFFICE_TIER_DESKS[1];
+  return OFFICE_TIER_DESKS[0];
+}
 
 export const PROMOTION = {
   juniorToMiddleProjects: 2,
