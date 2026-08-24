@@ -3,12 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { LocaleSelect } from '@/components/LocaleSelect';
 import { ManagerReportView } from '@/components/ManagerReportView';
 import {
   aggregateTrendReport,
   type ManagerReportResult,
   type ManagerReportScores,
 } from '@/game/report/computeManagerReport';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { moneyLocale } from '@/i18n/uiCatalog';
 
 type SessionRow = {
   id: string;
@@ -28,8 +31,7 @@ type SessionRow = {
 function toResult(row: SessionRow): ManagerReportResult | null {
   if (!row.report) return null;
   const raw = { ...row.report.scores } as ManagerReportScores & {
-    __meta?: { activityIndex?: number; paei?: ManagerReportResult['paei'] };
-  };
+    __meta?: { activityIndex?: number; paei?: ManagerReportResult['paei'] } };
   const meta = raw.__meta;
   delete raw.__meta;
   return {
@@ -43,6 +45,7 @@ function toResult(row: SessionRow): ManagerReportResult | null {
 
 export default function HistoryPage() {
   const { data: auth, status } = useSession();
+  const { t, locale } = useLocale();
   const [rows, setRows] = useState<SessionRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,19 +73,25 @@ export default function HistoryPage() {
   const primaryArchetype =
     finished.length >= 3 && trend?.archetype ? trend.archetype : last?.archetype;
 
+  const dateLocale = moneyLocale(locale);
+
   return (
     <main style={{ maxWidth: 860, margin: '40px auto', padding: 24 }}>
-      <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
-        ← Home
-      </Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
+          {t('common.backHome')}
+        </Link>
+        <LocaleSelect variant="inline" />
+      </div>
       <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
-        SESSION HISTORY
+        {t('history.title')}
       </h1>
 
       {status === 'unauthenticated' && (
         <div className="panel" style={{ marginTop: 20, color: 'var(--muted)' }}>
-          <Link href="/login">Log in</Link> to see saved sessions. Local Dev Play runs are not
-          persisted.
+          <Link href="/login">{t('history.logIn')}</Link>
+          {' — '}
+          {t('history.needLoginHint')}
         </div>
       )}
 
@@ -94,15 +103,15 @@ export default function HistoryPage() {
 
       {auth && !error && rows.length === 0 && (
         <div className="panel" style={{ marginTop: 20, color: 'var(--muted)' }}>
-          No sessions yet. Finish a run while signed in.
+          {t('history.empty')}
         </div>
       )}
 
       {primaryArchetype && finished.length >= 3 && (
         <p style={{ marginTop: 16, color: 'var(--muted)', fontSize: 13 }}>
-          Primary archetype from trend:{' '}
+          {t('history.primaryArchetype')}{' '}
           <strong style={{ color: '#fff' }}>
-            {String(primaryArchetype).replaceAll('_', ' ')}
+            {t(`report.archetypes.${primaryArchetype}`)}
           </strong>
         </p>
       )}
@@ -111,7 +120,7 @@ export default function HistoryPage() {
         <div className="panel" style={{ marginTop: 20, padding: 20 }}>
           <ManagerReportView
             report={trend}
-            title={`YOUR TREND (${trendSource.length} sessions)`}
+            title={t('report.trend', { n: trendSource.length })}
             emphasize
           />
         </div>
@@ -119,34 +128,38 @@ export default function HistoryPage() {
 
       {last && (
         <div className="panel" style={{ marginTop: 20, padding: 20, opacity: trend ? 0.92 : 1 }}>
-          <ManagerReportView report={last} title="LAST SESSION" />
+          <ManagerReportView report={last} title={t('report.lastSession')} />
         </div>
       )}
 
       <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <h2 className="pixel" style={{ fontSize: 10, color: 'var(--muted)' }}>
-          ALL RUNS
+          {t('history.allRuns')}
         </h2>
         {rows.map((s) => (
           <div key={s.id} className="panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-              <strong>{s.companyType.replaceAll('_', ' ')}</strong>
+              <strong>{t(`companies.${s.companyType}`)}</strong>
               <span style={{ color: s.bankrupt ? 'var(--red)' : 'var(--green)' }}>
-                {s.finalBudget != null ? `$${Number(s.finalBudget).toFixed(0)}` : 'in progress'}
+                {s.finalBudget != null
+                  ? `$${Number(s.finalBudget).toFixed(0)}`
+                  : t('history.inProgress')}
               </span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
-              {s.format === 'rapid_10min' ? 'Rapid (legacy)' : '4 quarters'} ·{' '}
-              {new Date(s.startedAt).toLocaleString()}
-              {s.finishedAt ? ` → ${new Date(s.finishedAt).toLocaleString()}` : ''}
-              {s.report?.archetype ? ` · ${s.report.archetype.replaceAll('_', ' ')}` : ''}
+              {s.format === 'rapid_10min' ? t('history.rapidLegacy') : t('history.fourQuarters')} ·{' '}
+              {new Date(s.startedAt).toLocaleString(dateLocale)}
+              {s.finishedAt ? ` → ${new Date(s.finishedAt).toLocaleString(dateLocale)}` : ''}
+              {s.report?.archetype
+                ? ` · ${t(`report.archetypes.${s.report.archetype}`)}`
+                : ''}
             </div>
           </div>
         ))}
       </div>
 
       <p style={{ marginTop: 16 }}>
-        <Link href="/play">Start a session →</Link>
+        <Link href="/play">{t('history.startSession')}</Link>
       </p>
     </main>
   );

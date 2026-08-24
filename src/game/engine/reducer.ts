@@ -19,7 +19,6 @@ import {
   DOMAIN_REPUTATION_ON_COMPLETE,
   MAX_DESKS_COMPANY,
   NEAR_BANKRUPTCY_RATIO,
-  OFFICE_TIER_DESKS,
   REPUTATION_DELTAS,
   ROLE_HIRE_COOLDOWN_WEEKS,
   ROLE_SALARY_BASE,
@@ -33,6 +32,7 @@ import {
   deliveryRoleFor,
   isDeliveryRole,
   leadFrequencyWeeks,
+  maxDesksForOffice,
   pickWeightedDomain,
   pickWeightedStack,
   PROMOTION,
@@ -144,6 +144,8 @@ export interface QuarterPL {
   revenue: number;
   salaries: number;
   overheads: number;
+  /** Compliance fails and similar mid-quarter write-offs (already taken from budget). */
+  penalties: number;
   ebitda: number;
   netProfit: number;
 }
@@ -175,6 +177,8 @@ export interface GameState extends RngCarrier {
   history: QuarterPL[];
   quarterRevenue: number;
   quarterSalaries: number;
+  /** Mid-quarter fines (compliance, etc.) — already deducted from budget. */
+  quarterPenalties: number;
   totalRevenue: number;
   nearBankruptcyFired: boolean;
   gameOver: boolean;
@@ -249,12 +253,6 @@ function log(
     payload,
     createdAt: new Date().toISOString(),
   } as DecisionLogEntry);
-}
-
-function maxDesksForOffice(totalRevenue: number): number {
-  if (totalRevenue >= 15000) return OFFICE_TIER_DESKS[2];
-  if (totalRevenue >= 5000) return OFFICE_TIER_DESKS[1];
-  return OFFICE_TIER_DESKS[0];
 }
 
 function totalDesks(state: GameState): number {
@@ -485,6 +483,7 @@ export function createInitialState(opts: {
     history: [],
     quarterRevenue: 0,
     quarterSalaries: 0,
+    quarterPenalties: 0,
     totalRevenue: 0,
     nearBankruptcyFired: false,
     gameOver: false,
@@ -1167,22 +1166,64 @@ function completeProject(state: GameState, project: Project, emp: Employee): voi
   }
 }
 
+function weeksElapsedInQuarter(state: GameState): number {
+  const quarterStartWeek = (state.quarter - 1) * WEEKS_PER_QUARTER + 1;
+  return Math.min(WEEKS_PER_QUARTER, state.week - quarterStartWeek + 1);
+}
+
+function buildQuarterPL(
+  state: GameState,
+  opts: { partial: boolean },
+): QuarterPL {
+  const recurring = state.employees.reduce((s, e) => s + e.salary, 0);
+  const recurringCharge = opts.partial
+    ? Math.round((recurring * weeksElapsedInQuarter(state)) / WEEKS_PER_QUARTER)
+    : recurring;
+  const totalSalaries = state.quarterSalaries + recurringCharge;
+  const overheads = Math.round(totalSalaries * 0.15);
+  const penalties = state.quarterPenalties;
+  const revenue = state.quarterRevenue;
+  const ebitda = revenue - totalSalaries - overheads - penalties;
+  return {
+    revenue,
+    salaries: totalSalaries,
+    overheads,
+    penalties,
+    ebitda,
+    netProfit: ebitda,
+  };
+}
+
+/** Mid-quarter bankruptcy — roll partial Q into history so Total NP matches row sums (A58). */
+function flushPartialQuarterIfNeeded(state: GameState): void {
+  if (weeksElapsedInQuarter(state) >= WEEKS_PER_QUARTER) return;
+  const recurring = state.employees.reduce((s, e) => s + e.salary, 0);
+  if (
+    state.quarterRevenue === 0 &&
+    state.quarterSalaries === 0 &&
+    state.quarterPenalties === 0 &&
+    recurring === 0
+  ) {
+    return;
+  }
+  state.history.push(buildQuarterPL(state, { partial: true }));
+  state.quarterRevenue = 0;
+  state.quarterSalaries = 0;
+  state.quarterPenalties = 0;
+}
+
 function endQuarter(state: GameState): void {
   // Retainer: quarterly fee for contracts still alive this EOQ (addendum-24 / spec §6).
   payAliveRetainers(state);
 
-  const revenue = state.quarterRevenue;
-  const salaries = state.quarterSalaries;
   const recurring = state.employees.reduce((s, e) => s + e.salary, 0);
-  const totalSalaries = salaries + recurring;
   state.budget -= recurring;
-  const overheads = Math.round(totalSalaries * 0.15);
-  state.budget -= overheads;
-  const ebitda = revenue - totalSalaries - overheads;
-  const netProfit = ebitda;
-  state.history.push({ revenue, salaries: totalSalaries, overheads, ebitda, netProfit });
+  const pl = buildQuarterPL(state, { partial: false });
+  state.budget -= pl.overheads;
+  state.history.push(pl);
   state.quarterRevenue = 0;
   state.quarterSalaries = 0;
+  state.quarterPenalties = 0;
 
   // Queue promotion dialogs
   for (const emp of state.employees) {
@@ -1324,7 +1365,7 @@ function tickWeek(state: GameState): GameState {
     }
   }
 
-  // Near bankruptcy
+  // Near bankruptcy (pre EOQ payroll)
   if (
     !state.nearBankruptcyFired &&
     state.budget < state.startBudget * NEAR_BANKRUPTCY_RATIO
@@ -1337,12 +1378,18 @@ function tickWeek(state: GameState): GameState {
     });
   }
 
+  // Quarter boundary BEFORE snapshot — EOQ payroll can bankrupt; last snap must see final budget (A61).
+  if (state.week % WEEKS_PER_QUARTER === 0) {
+    endQuarter(state);
+  }
+
   if (state.budget < 0) {
+    flushPartialQuarterIfNeeded(state);
     state.gameOver = true;
     state.bankrupt = true;
   }
 
-  // Snapshot
+  // Snapshot — always post-payroll / post-mid-quarter death so Manager Report endBudget is truthful
   const roomOccupancy: Record<string, number> = {};
   for (const room of state.rooms) {
     const occ = room.desks.filter((d) => d.employeeId).length;
@@ -1365,11 +1412,6 @@ function tickWeek(state: GameState): GameState {
     roomOccupancy,
     anyMatchAvailable: anyMatchAvailableNow(state),
   });
-
-  // Quarter boundary
-  if (state.week % WEEKS_PER_QUARTER === 0) {
-    endQuarter(state);
-  }
 
   if (!state.gameOver) state.week += 1;
   return state;
@@ -1403,6 +1445,11 @@ function autoAssign(state: GameState): void {
 }
 
 function maybeCompliance(state: GameState): void {
+  // Trainee has no Accountant unlock — skip compliance entirely (no uncounterable fines).
+  if (state.managerLevel === 'trainee') return;
+  // Addendum 64: calendar Q1 grace — no compliance in weeks 1–12 (overload at onboarding).
+  if (state.quarter === 1) return;
+
   let chance = baseComplianceChance(state);
   const acc = accountantCoverage(state);
   chance *= 1 - acc.chanceReduction;
@@ -1414,6 +1461,7 @@ function maybeCompliance(state: GameState): void {
 
   if (outcome === 'fail') {
     state.budget -= penalty;
+    state.quarterPenalties += penalty;
     state.reputation += -3;
     state.lastEventMessage = `Compliance check failed (−$${penalty})`;
   } else {

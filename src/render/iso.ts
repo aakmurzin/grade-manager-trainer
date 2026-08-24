@@ -18,11 +18,30 @@ export function depthZ(gx: number, gy: number, bias = 0): number {
 export function deskSlot(index: number, cols = 3): { gx: number; gy: number } {
   const c = index % cols;
   const r = Math.floor(index / cols);
-  // Wider spacing so neighboring desk sprites don't paint over seated staff
-  return { gx: 2.0 + c * 3.2, gy: 2.2 + r * 3.0 };
+  // Keep clear of SW coffee + NW plant props; spacing so sprites don't overlap.
+  return { gx: 3.1 + c * 2.85, gy: 2.7 + r * 3.25 };
+}
+
+/** Decor props in room 0 — corners desks never use. */
+export function coffeePropSlot(grid: number): { gx: number; gy: number } {
+  // Deep SW tip — away from desk column 0 / row 1+
+  return { gx: 1.05, gy: grid - 1.15 };
+}
+
+export function plantPropSlot(_grid: number): { gx: number; gy: number } {
+  // Deep NW tip — away from east desk column
+  return { gx: 1.0, gy: 1.0 };
 }
 
 export function seatOffset(gx: number, gy: number): { gx: number; gy: number } {
   // Feet just in front of the desk toward the camera (arcade prototype)
   return { gx: gx + 0.08, gy: gy + 0.72 };
+}
+
+/**
+ * Seat for work sprites that already bake a chair + laptop desk (sales).
+ * Sit into the furniture footprint so we don't get a second empty desk beside them.
+ */
+export function workSeatOffset(gx: number, gy: number): { gx: number; gy: number } {
+  return { gx: gx + 0.12, gy: gy + 0.28 };
 }

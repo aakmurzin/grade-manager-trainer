@@ -15,18 +15,23 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-SRC = next(
-    (
-        p
-        for p in (
-            ROOT / "stitch_grade_tycoon_asset_prompts 2",
-            ROOT / "stitch_grade_tycoon_asset_prompts",
-        )
-        if p.is_dir()
-    ),
+SRC_CANDIDATES = [
+    ROOT / "stitch_grade_tycoon_asset_prompts 3",
     ROOT / "stitch_grade_tycoon_asset_prompts 2",
-)
+    ROOT / "stitch_grade_tycoon_asset_prompts",
+]
+SRC = next((p for p in SRC_CANDIDATES if p.is_dir()), SRC_CANDIDATES[-1])
 OUT = ROOT / "public" / "assets"
+
+
+def pick_sheet(*rels: str) -> Path | None:
+    """First matching screen.png under SRC (or any SRC_CANDIDATE for badges-only sheets)."""
+    for base in SRC_CANDIDATES:
+        for rel in rels:
+            path = base / rel
+            if path.is_file():
+                return path
+    return None
 
 
 def is_checker_bg(r: int, g: int, b: int) -> bool:
@@ -550,16 +555,20 @@ def extract_cell_pale_clothes(cell: Image.Image, min_area: int = 180) -> Image.I
     px = im.load()
     w, h = im.size
 
-    def is_gray_checker(r: int, g: int, b: int, a: int) -> bool:
+    def is_bg(r: int, g: int, b: int, a: int) -> bool:
         if a < 20:
             return True
         avg = (r + g + b) / 3.0
         ch = max(r, g, b) - min(r, g, b)
         warm = (r + g) / 2.0 - b
-        # cream sweater is warm pale — never treat as checker
-        if warm >= 8 and avg >= 160:
+        # cream / warm pale sweater — keep (not sheet white)
+        if warm >= 8 and 160 <= avg < 245:
             return False
-        return ch <= 20 and 70 <= avg <= 250
+        # pure / near-white sheet (avg>250 used to escape the old ≤250 check)
+        if avg >= 245 and ch <= 40:
+            return True
+        # mid grey checker
+        return ch <= 20 and 70 <= avg <= 244
 
     seen = [[False] * w for _ in range(h)]
     q: deque[tuple[int, int]] = deque()
@@ -568,7 +577,7 @@ def extract_cell_pale_clothes(cell: Image.Image, min_area: int = 180) -> Image.I
         if not (0 <= x < w and 0 <= y < h) or seen[y][x]:
             return
         r, g, b, a = px[x, y]
-        if is_gray_checker(r, g, b, a):
+        if is_bg(r, g, b, a):
             seen[y][x] = True
             q.append((x, y))
 
@@ -585,7 +594,7 @@ def extract_cell_pale_clothes(cell: Image.Image, min_area: int = 180) -> Image.I
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if 0 <= nx < w and 0 <= ny < h and not seen[ny][nx]:
                 r, g, b, a = px[nx, ny]
-                if is_gray_checker(r, g, b, a):
+                if is_bg(r, g, b, a):
                     seen[ny][nx] = True
                     q.append((nx, ny))
                 else:
@@ -626,10 +635,17 @@ def extract_cell_pale_clothes(cell: Image.Image, min_area: int = 180) -> Image.I
     return tight(out, pad=1)
 
 
-def extract_role_grid(role: str, rel: str, mapping: dict[str, int] | None = None) -> None:
-    path = SRC / rel
-    if not path.is_file():
-        print("skip missing", role, rel)
+def extract_role_grid(
+    role: str,
+    rel: str | None = None,
+    mapping: dict[str, int] | None = None,
+    *,
+    rels: tuple[str, ...] = (),
+) -> None:
+    candidates = ((rel,) if rel else ()) + rels
+    path = pick_sheet(*candidates) if candidates else None
+    if path is None:
+        print("skip missing", role, rel or rels)
         return
     mapping = mapping or MAPPING_DELIVERY
     sheet = Image.open(path)
@@ -659,11 +675,70 @@ def extract_role_grid(role: str, rel: str, mapping: dict[str, int] | None = None
     print(f"{role}: {saved}/{len(mapping)}")
 
 
-def extract_blobs_free(rel: str, names: list[str], min_area: int = 400) -> None:
+def clear_bg_white_sheet(im: Image.Image) -> Image.Image:
+    """Wipe near-white sheet bg only — keep mid-grey (coffee machine) and light wood tops."""
+    im = im.convert("RGBA")
+    px = im.load()
+    w, h = im.size
+
+    def is_white(r: int, g: int, b: int, a: int) -> bool:
+        if a == 0:
+            return True
+        avg = (r + g + b) / 3.0
+        ch = max(r, g, b) - min(r, g, b)
+        return avg >= 215 and ch <= 45
+
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if is_white(r, g, b, a):
+                px[x, y] = (0, 0, 0, 0)
+
+    seen = [[False] * w for _ in range(h)]
+    q: deque[tuple[int, int]] = deque()
+
+    def try_seed(x: int, y: int) -> None:
+        if seen[y][x]:
+            return
+        r, g, b, a = px[x, y]
+        if is_white(r, g, b, a):
+            px[x, y] = (0, 0, 0, 0)
+            seen[y][x] = True
+            q.append((x, y))
+
+    for x in range(w):
+        try_seed(x, 0)
+        try_seed(x, h - 1)
+    for y in range(h):
+        try_seed(0, y)
+        try_seed(w - 1, y)
+
+    while q:
+        x, y = q.popleft()
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < w and 0 <= ny < h and not seen[ny][nx]:
+                r, g, b, a = px[nx, ny]
+                if is_white(r, g, b, a):
+                    px[nx, ny] = (0, 0, 0, 0)
+                    seen[ny][nx] = True
+                    q.append((nx, ny))
+                else:
+                    seen[ny][nx] = True
+    return im
+
+
+def extract_blobs_free(
+    rel: str | None = None,
+    names: list[str] | None = None,
+    min_area: int = 400,
+    *,
+    rels: tuple[str, ...] = (),
+) -> None:
     """Furniture sheet is a 2x2 layout: desk | coffee / plant | conference."""
-    path = SRC / rel
-    if not path.is_file():
-        print("skip", rel)
+    candidates = ((rel,) if rel else ()) + rels
+    path = pick_sheet(*candidates) if candidates else None
+    if path is None or names is None:
+        print("skip furniture", rel or rels)
         return
     sheet = clear_bg(Image.open(path))
     w, h = sheet.size
@@ -673,10 +748,22 @@ def extract_blobs_free(rel: str, names: list[str], min_area: int = 400) -> None:
         sheet.crop((0, h // 2, w // 2, h)),
         sheet.crop((w // 2, h // 2, w, h)),
     ]
-    for name, cell in zip(names, cells):
+    # Raw cells for coffee — default clear_bg wipes grey machine + light countertop.
+    raw_sheet = Image.open(path).convert("RGBA")
+    raw_cells = [
+        raw_sheet.crop((0, 0, w // 2, h // 2)),
+        raw_sheet.crop((w // 2, 0, w, h // 2)),
+        raw_sheet.crop((0, h // 2, w // 2, h)),
+        raw_sheet.crop((w // 2, h // 2, w, h)),
+    ]
+    for name, cell, raw in zip(names, cells, raw_cells):
         # Plant leaves often disconnect from pot — keep all sizable blobs
         if name == "plant":
             got = merge_nearby_blobs(cell, min_area=200)
+        elif name == "coffee":
+            # Machine + cups + countertop are mid-grey / light — preserve them.
+            cleaned = clear_bg_white_sheet(raw)
+            got = merge_nearby_blobs(cleaned, min_area=80, already_cleared=True)
         else:
             got = extract_cell(cell, min_area=min_area)
         if got is None:
@@ -686,9 +773,14 @@ def extract_blobs_free(rel: str, names: list[str], min_area: int = 400) -> None:
         print("furniture", name, got.size)
 
 
-def merge_nearby_blobs(cell: Image.Image, min_area: int = 200) -> Image.Image | None:
-    """Keep every opaque blob above min_area (plant = pot + leaves)."""
-    cleaned = clear_bg(cell, chars=False)
+def merge_nearby_blobs(
+    cell: Image.Image,
+    min_area: int = 200,
+    *,
+    already_cleared: bool = False,
+) -> Image.Image | None:
+    """Keep every opaque blob above min_area (plant = pot + leaves; coffee = cabinet + machine)."""
+    cleaned = cell if already_cleared else clear_bg(cell, chars=False)
     im = cleaned.convert("RGBA")
     w, h = im.size
     px = im.load()
@@ -727,9 +819,10 @@ def merge_nearby_blobs(cell: Image.Image, min_area: int = 200) -> Image.Image | 
 
 def extract_ui_badges() -> None:
     """Badges include silver (low-chroma grey) — do NOT wipe mid-grey as checker."""
-    rel = "16_bit_pixel_art_ui_icons_and_badges_set._1._skill_tier_badges_3_variants_of_a/screen.png"
-    path = SRC / rel
-    if not path.is_file():
+    path = pick_sheet(
+        "16_bit_pixel_art_ui_icons_and_badges_set._1._skill_tier_badges_3_variants_of_a/screen.png",
+    )
+    if path is None:
         print("skip badges")
         return
     sheet = Image.open(path).convert("RGBA")
@@ -817,8 +910,10 @@ def extract_tiles() -> None:
     """Floor diamonds from Stitch sheet are hard to isolate (merged clusters).
     Generate clean iso tiles tinted from the sheet palette; walls from tall blobs.
     """
-    rel = "16_bit_pixel_art_floor_and_wall_tile_set._isometric_2_1_diamond_tiles._tier_1/screen.png"
-    path = SRC / rel
+    rels = (
+        "16_bit_pixel_art_floor_and_wall_tile_set._isometric_2_1_diamond_tiles._tier_1/screen.png",
+    )
+    path = pick_sheet(*rels)
     face = (198, 208, 220)
     face2 = (186, 200, 176)
     face3 = (176, 198, 222)
@@ -949,8 +1044,8 @@ def extract_tiles() -> None:
 
 
 def extract_logo() -> None:
-    path = SRC / "grade_tycoon_pixel_logo" / "screen.png"
-    if not path.is_file():
+    path = pick_sheet("grade_tycoon_pixel_logo/screen.png")
+    if path is None:
         return
     got = extract_cell(Image.open(path), min_area=50)
     if got:
@@ -963,44 +1058,66 @@ def main() -> None:
     for d in ("chars", "furniture", "tiles", "ui"):
         (OUT / d).mkdir(parents=True, exist_ok=True)
 
-    # Delivery roles — sheet identity from art (not folder number order):
-    # chibi_1 yellow clipboard woman → HR
-    # chibi_2 blue hoodie + laptop → Dev
-    # chibi_3 navy suit + briefcase → Sales
+    # Delivery roles (folder 3 uses descriptive names; folder 2 uses chibi_N)
     extract_role_grid(
         "hr",
-        "16_bit_pixel_art_character_sprite_sheet_isometric_2_1_game_asset_chibi_1/screen.png",
-        MAPPING_DELIVERY,
+        rels=(
+            "16_bit_pixel_art_character_sprite_sheet_an_hr_manager_in_a_mustard_yellow/screen.png",
+            "16_bit_pixel_art_character_sprite_sheet_isometric_2_1_game_asset_chibi_1/screen.png",
+        ),
+        mapping=MAPPING_DELIVERY,
     )
     extract_role_grid(
         "dev",
-        "16_bit_pixel_art_character_sprite_sheet_isometric_2_1_game_asset_chibi_2/screen.png",
-        MAPPING_DEV,
+        rels=(
+            "16_bit_pixel_art_character_sprite_sheet_a_software_developer_in_a_primary_blue/screen.png",
+            "16_bit_pixel_art_character_sprite_sheet_isometric_2_1_game_asset_chibi_2/screen.png",
+        ),
+        mapping=MAPPING_DEV,
     )
     extract_role_grid(
         "sales",
-        "16_bit_pixel_art_character_sprite_sheet_isometric_2_1_game_asset_chibi_3/screen.png",
-        MAPPING_DELIVERY,
+        rels=(
+            "16_bit_pixel_art_character_sprite_sheet_a_business_casual_sales_rep_in_a_dark/screen.png",
+            "16_bit_pixel_art_character_sprite_sheet_isometric_2_1_game_asset_chibi_3/screen.png",
+        ),
+        mapping=MAPPING_DELIVERY,
     )
     extract_role_grid(
         "designer",
-        "16_bit_pixel_art_character_sprite_sheet_the_designer/screen.png",
-        MAPPING_DESIGNER,
+        rels=(
+            "16_bit_pixel_art_character_storyboard_the_designer._a_female_chibi_character_in/screen.png",
+            "16_bit_pixel_art_character_sprite_sheet_the_designer/screen.png",
+        ),
+        mapping=MAPPING_DESIGNER,
     )
 
     support = {
-        "recruiter": "16_bit_pixel_art_character_storyboard_the_recruiter._a_chibi_character_in_a/screen.png",
-        "marketer": "16_bit_pixel_art_character_storyboard_the_marketer._a_chibi_character_in_a/screen.png",
-        "lead_gen": "16_bit_pixel_art_character_storyboard_the_lead_gen_specialist._a_chibi/screen.png",
-        "team_lead": "16_bit_pixel_art_character_storyboard_the_team_lead._a_chibi_character_in_a/screen.png",
-        "accountant": "16_bit_pixel_art_character_storyboard_the_accountant._a_chibi_character_in_a/screen.png",
+        "recruiter": (
+            "16_bit_pixel_art_character_storyboard_the_recruiter._a_chibi_character_in_a/screen.png",
+        ),
+        "marketer": (
+            "16_bit_pixel_art_character_storyboard_the_marketer._a_chibi_character_in_a/screen.png",
+        ),
+        "lead_gen": (
+            "16_bit_pixel_art_character_storyboard_the_lead_gen_specialist._a_chibi/screen.png",
+        ),
+        "team_lead": (
+            "16_bit_pixel_art_character_storyboard_the_team_lead._a_chibi_character_in_a/screen.png",
+        ),
+        "accountant": (
+            "16_bit_pixel_art_character_storyboard_the_accountant._a_chibi_character_in_a/screen.png",
+        ),
     }
-    for role, rel in support.items():
-        extract_role_grid(role, rel, MAPPING_SUPPORT)
+    for role, rels in support.items():
+        extract_role_grid(role, rels=rels, mapping=MAPPING_SUPPORT)
 
     extract_blobs_free(
-        "16_bit_pixel_art_isometric_office_furniture_set._items_include_1._office_desk/screen.png",
-        ["desk", "coffee", "plant", "conference"],
+        rels=(
+            "16_bit_pixel_art_isometric_office_furniture_set._includes_1._office_desk_with/screen.png",
+            "16_bit_pixel_art_isometric_office_furniture_set._items_include_1._office_desk/screen.png",
+        ),
+        names=["desk", "coffee", "plant", "conference"],
         min_area=800,
     )
     extract_ui_badges()

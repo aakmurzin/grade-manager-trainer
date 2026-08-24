@@ -14,13 +14,25 @@
 
 | | Trainee | Manager | Director |
 |---|---|---|---|
-| Роли найма | Sales / Dev *или Designer* / HR | + Recruiter / Marketer / Lead Gen / Team Lead | + Accountant |
+| Роли найма | Sales / Dev *или Designer* / HR | + Recruiter / Marketer / Lead Gen / Team Lead / **Accountant** | те же роли (+ Marketing Agency unlock) |
+| Compliance checks | **off** | **on** | **on** |
 | Типы компаний | Design Agency, Product Studio | + IT Outsourcing | + Marketing Agency |
 | Engagement Types | One-off | + Long-delivery | + Recurring retainer |
 | Параллельных проектов | 1 | 2–3 | без лимита (кроме capacity) |
 | Стартовый бюджет | щедрый | средний | жёсткий |
 | Проверяемые оси | Staffing, Delivery Quality, Cashflow, Prioritization | + Capacity Planning, Team Retention | + Client Retention |
 | Разблокировка | доступен всегда | средний Manager Report score ≥ порог за последние N сессий Trainee | score ≥ порог за Manager **и** Reputation ≥ порог |
+
+**Compliance progression (addendum-62/63/64 — дизайн, не побочный эффект бага):**
+
+| Уровень | Compliance | Accountant | Принцип |
+|---|---|---|---|
+| **Trainee** | off (полностью) | недоступен | Риск без доступного контрплея ≠ обучающий вызов; Trainee и так ограниченный ролевой набор (`addendum-63`). Исключение из правила A37. |
+| **Manager** | on (**Q1 grace**) | **разблокирован** (A63) | Риск через найм (`addendum-37`). Q1 (недели 1–12) без compliance — onboarding без overload (`addendum-64`). |
+| **Director** | on (**Q1 grace**) | доступен | Полный risk-профиль с Q2; Marketing paired A64. |
+
+Trainee compliance = 0 — осознанное **(b)** из `addendum-62`. **Q1 grace** (вариант a, календарный) —
+недели 1–12 сессии, не per-contract; на Trainee не влияет (там compliance уже off).
 
 ---
 
@@ -96,9 +108,11 @@ score = 100 × (1 − rework_rate) − compliance_incidents × 3
 **Cashflow Discipline**
 ```
 score = 100 − near_bankruptcy_events × 15 − avg_budget_headroom_penalty
+score = min(score, 20)  if final budget < 0  (addendum-58)
 ```
 `near_bankruptcy_events` — бюджет падал ниже ~10% от стартового. Плюс штраф за низкий средний
-запас прочности по кварталам, не только за крайние случаи.
+запас прочности по кварталам, не только за крайние случаи. Фактическое банкротство (final budget
+&lt; 0 по последнему `week_snapshot`) — доминирующий штраф: score не выше 20.
 
 **Prioritization**
 ```
@@ -346,7 +360,12 @@ long-delivery контракты.
 
 Свой burnout не заводим — перегрузка проявляется через непокрытый риск, а не через мораль.
 
-Для headless-агента `reasonable` (Marketing Director, **финальная addendum-46**):
+**Q1 grace period (addendum-64):** на Manager/Director `maybeCompliance` не стреляет, пока
+`quarter === 1` (календарные недели 1–12 сессии). Не per-contract. Цель — не грузить compliance
+в самый плотный onboarding-квартал. Trainee не затронут (compliance уже off).
+
+Для headless-агента `reasonable` (Marketing Director, **финальная addendum-46**; Accountant
+доступен с **Manager**, addendum-63):
 
 - нанимать Accountant не "по умолчанию", а только при зрелом risk-profile
 - триггер: активный compliance-load-портфель **≥2** (`inprogress recurring_retainer/long_delivery`)
@@ -354,8 +373,14 @@ long-delivery контракты.
 - **Принятое ограничение (addendum-46):** триггер не гарантирует hire при marginal budget —
   insurance-paradox (защита доступна устойчивым сессиям, marginal часто не могут позволить hire
   в момент нужды). Не баг; agent/engine-тюнинг триггера или §9 base rate **не продолжаем**
+- **Trainee:** compliance events **off** (addendum-62/63) — Accountant всё равно недоступен на
+  этом уровне; не смешивать с ослаблением риска на Manager/Director
+- **Q1 grace (A64):** paired Marketing 40001..40024 — bankrupt **58.3%** / profitable **41.7%** /
+  mean **−$629** vs A46 baseline 66.7% / 29.2% / +$404. Сдвиг умеренный (не поляризация) —
+  принят как новый Marketing baseline; checkBand не переоткрываем
 - Остаточные bankrupt (~paired A45 на `[5000,7000]`): ~**19%** чистый post-payout payroll-разрыв,
-  ~**81%** compliance-related (coverage gap, не слабость защиты после hire)
+  ~**81%** compliance-related (coverage gap, не слабость защиты после hire) — цифры A45 **до**
+  Q1 grace
 - **Telemetry debt:** weekly Compliance Load history в decision log — будущее улучшение
   (addendum-38/46); не блокирует закрытие Marketing-цикла
 
@@ -437,13 +462,13 @@ long-delivery контракты.
 | **Design Agency** | Trainee | 0% | 87.5% | +$6,013 (median) | **Closed** (`addendum-17`→`51`) |
 | **Product Studio** | Trainee | 4.2% | 58.3% | +$1,235 | **Confirmed** (`addendum-52`) |
 | **IT Outsourcing** | Manager | 50% | 50% | +$7,432 | **Confirmed** (high variance, `addendum-52`) |
-| **Marketing Agency** | Director | 66.7% | 29.2% | +$404 | **Closed** (`addendum-24`→`46`) |
+| **Marketing Agency** | Director | 58.3% | 41.7% | −$629 | **Closed** (`addendum-24`→`46`; Q1 grace re-verify `addendum-64`) |
 
 Основной калибровочный цикл (`addendum-08`→`52`) **завершён**. Четыре профиля риска
 подтверждены эмпирически на детерминированных seeds — см. `docs/addendum-53.md`.
 
-Marketing final: `checkBand [5000,7000]`, Accountant `load≥2` held 2w, start $10k. See
-`docs/addendum-46.md`.
+Marketing final: `checkBand [5000,7000]`, Accountant `load≥2` held 2w, start $10k, **Q1
+compliance grace** (A64). See `docs/addendum-46.md`, `docs/addendum-64.md`.
 
 Design final: `checkBand [900,1100]`, Designer domain-delivery, forceAssign **1w**, start
 **$20k**, spawn **0.75w**. See `docs/addendum-51.md`.
@@ -474,7 +499,9 @@ Avoidable-mismatch fix: `docs/addendum-56.md`.
 | **Delivery Quality & Risk** | **Working** | Rework rate + compliance fails + mismatch penalties from `assign_project` / `rework` / `random_event`. |
 | **Client Retention** | **Working** | N/A on one-off (Design/Product); scored when LD/retainer assigns or churn exist (Marketing/IT). |
 | **People Leadership** | **Working** | Bonus class (proactive/reactive/firefighting/wasted) + promotions + quits. |
-| **Cashflow Discipline** | **Working** | `near_bankruptcy` + budget headroom from `week_snapshot`. |
+| **Cashflow Discipline** | **Fixed (A58 / A61)** | A58: `min(score,20)` при budget&lt;0. A61: EOQ payroll death оставлял positive last snap — cap не срабатывал; `endQuarter` before snapshot + `finalBudget`/`bankrupt` opts. |
+| **P&L on mid-quarter bankruptcy** | **Fixed (A58)** | Partial Q flushed into `history[]` with prorated recurring salaries — Total NP = Σ row arithmetic. |
+| **Archetype blurbs** | **Filled (A60/A62)** | EN/RU/UA в `messages/{en,ru,ua}.json`; default locale **en**. `next-intl` switcher — follow-up. |
 | **Prioritization** | **Working** | Idle wait only when `anyMatchAvailable`; skips count. |
 | **Capacity Planning** | **Working** | `build_desk`/`build_room` occupancy + cramped-week penalty. |
 | **Confidence layer** | **Working** | Each axis `{score, confidence, n}`; N/A when no evidence; archetype requires ≥4 medium/high. |
