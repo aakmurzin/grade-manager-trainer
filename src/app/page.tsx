@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandLogo } from '@/components/BrandLogo';
 import { LocaleSelect } from '@/components/LocaleSelect';
 import { useLocale } from '@/i18n/LocaleProvider';
 
@@ -18,26 +19,8 @@ export default function HomePage() {
       }}
     >
       <div style={{ maxWidth: 560, width: '100%', textAlign: 'center' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/ui/pixel_g_sm.png"
-            alt="Grade"
-            width={48}
-            height={48}
-            style={{ imageRendering: 'pixelated' }}
-          />
-          <span className="pixel" style={{ fontSize: 18, color: '#fff' }}>
-            {t('home.brand')}
-          </span>
+        <div style={{ marginBottom: 20 }}>
+          <BrandLogo size="lg" alt={t('home.brand')} />
         </div>
         <h1
           className="pixel"

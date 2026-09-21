@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import { LocaleSelect } from '@/components/LocaleSelect';
+import { BrandLogo } from '@/components/BrandLogo';
 import { useLocale } from '@/i18n/LocaleProvider';
 
 export default function ProfilePage() {
@@ -32,6 +33,9 @@ export default function ProfilePage() {
           {t('common.backHome')}
         </Link>
         <LocaleSelect variant="inline" />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <BrandLogo size="sm" alt={t('home.brand')} />
       </div>
       <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
         {t('profile.title')}

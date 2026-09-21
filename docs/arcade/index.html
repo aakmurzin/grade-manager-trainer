@@ -586,8 +586,9 @@ function renderPixelLogo(cell){
 }
 document.getElementById('startLogo').innerHTML = `
   <div class="logoRow">
-    <img src="assets/ui/pixel_g_sm.png" alt="G" width="48" height="48" style="image-rendering:pixelated;width:48px;height:auto;">
-    <span class="pixel" style="font-size:20px;color:#fff;">GRADE</span>
+    <img src="assets/ui/grade_logo_sm.png?v=2" alt="Grade" width="120" height="120" style="width:120px;height:auto;">
+    <!-- legacy text wordmark removed — mark includes GRADE -->
+    <span class="pixel" style="font-size:20px;color:#fff;display:none;">GRADE</span>
   </div>`;
 
 /* ===================== DATA ===================== */
