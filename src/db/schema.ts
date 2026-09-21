@@ -61,36 +61,3 @@ export const managerReports = pgTable(
   },
   (t) => [uniqueIndex('manager_reports_session_uidx').on(t.sessionId)],
 );
-
-/** Auth.js tables (when wired). */
-export const authUsers = pgTable('user', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: text('name'),
-  email: text('email').notNull().unique(),
-  emailVerified: timestamp('emailVerified', { withTimezone: true }),
-  image: text('image'),
-});
-
-export const authAccounts = pgTable('account', {
-  userId: uuid('userId')
-    .notNull()
-    .references(() => authUsers.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(),
-  provider: text('provider').notNull(),
-  providerAccountId: text('providerAccountId').notNull(),
-  refresh_token: text('refresh_token'),
-  access_token: text('access_token'),
-  expires_at: integer('expires_at'),
-  token_type: text('token_type'),
-  scope: text('scope'),
-  id_token: text('id_token'),
-  session_state: text('session_state'),
-});
-
-export const authSessions = pgTable('session', {
-  sessionToken: text('sessionToken').primaryKey(),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => authUsers.id, { onDelete: 'cascade' }),
-  expires: timestamp('expires', { withTimezone: true }).notNull(),
-});
