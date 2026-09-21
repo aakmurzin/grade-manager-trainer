@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { FormEvent, useState } from 'react';
 import { LocaleSelect } from '@/components/LocaleSelect';
+import { BrandLogo } from '@/components/BrandLogo';
 import { useLocale } from '@/i18n/LocaleProvider';
 
 export default function SignupPage() {
@@ -51,6 +52,9 @@ export default function SignupPage() {
           {t('common.backHome')}
         </Link>
         <LocaleSelect variant="inline" />
+      </div>
+      <div style={{ marginTop: 20 }}>
+        <BrandLogo size="sm" alt={t('home.brand')} />
       </div>
       <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
         {t('auth.signUp')}

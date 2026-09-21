@@ -29,6 +29,7 @@ import { PLTable } from '@/components/PLTable';
 import { ManagerReportView } from '@/components/ManagerReportView';
 import { OfficeCanvas } from '@/render/OfficeCanvas';
 import { LocaleSelect } from '@/components/LocaleSelect';
+import { BrandLogo } from '@/components/BrandLogo';
 import { OnboardingModal, OnboardingPanel } from '@/components/OnboardingGuide';
 import { onboardingCopy, type AppLocale } from '@/i18n/archetypes';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -120,9 +121,14 @@ export function PlayApp() {
   if (phase === 'select') {
     return (
       <main style={{ maxWidth: 760, margin: '40px auto', padding: 24 }}>
-        <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
-          {t('common.backHome')}
-        </Link>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <Link href="/" style={{ fontSize: 12, color: 'var(--muted)' }}>
+            {t('common.backHome')}
+          </Link>
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <BrandLogo size="sm" alt={t('home.brand')} />
+        </div>
         <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
           {t('select.title')}
         </h1>

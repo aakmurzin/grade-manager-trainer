@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { LocaleSelect } from '@/components/LocaleSelect';
+import { BrandLogo } from '@/components/BrandLogo';
 import { ManagerReportView } from '@/components/ManagerReportView';
 import {
   aggregateTrendReport,
@@ -82,6 +83,9 @@ export default function HistoryPage() {
           {t('common.backHome')}
         </Link>
         <LocaleSelect variant="inline" />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <BrandLogo size="sm" alt={t('home.brand')} />
       </div>
       <h1 className="pixel" style={{ fontSize: 14, color: 'var(--lblue)', marginTop: 16 }}>
         {t('history.title')}
