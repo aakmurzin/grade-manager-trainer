@@ -7,7 +7,7 @@ shared brand tokens and some formulas only.
 
 - **Next.js** (App Router) + TypeScript on **Vercel**
 - **Neon Postgres** + **Drizzle** (schema ready)
-- **Auth.js** (email/password — wiring next)
+- **Auth.js** (email/password — live on Neon)
 - Game economy: pure TS reducer in `src/game/`
 - Manager Report: `src/game/report/` (7 axes)
 - Office render: PixiJS (upcoming); Dev Play uses DOM desks for now
@@ -19,6 +19,8 @@ shared brand tokens and some formulas only.
 | [`docs/pitch.md`](docs/pitch.md) | Product why |
 | [`docs/balance-spec.md`](docs/balance-spec.md) | Mechanics source of truth |
 | [`docs/HANDOFF.md`](docs/HANDOFF.md) | Original handoff (stack there said Supabase — we use Next/Neon) |
+| [`docs/addendum-66.md`](docs/addendum-66.md) | Auth/Neon live checklist |
+| [`docs/addendum-67.md`](docs/addendum-67.md) | Greenlight A66 + HANDOFF stack sync |
 | [`docs/prototype-reference.html`](docs/prototype-reference.html) | Arcade visual/P&L reference |
 
 ## Run locally
@@ -46,5 +48,5 @@ openssl rand -base64 32
 - [x] Dev Play UI + P&L + Manager Report radar
 - [x] PixiJS isometric office
 - [x] Auth.js credentials + session APIs
-- [ ] Apply Neon migrations + debug login with real `DATABASE_URL`
+- [x] Neon schema applied (`db:push`) + login/signup/history live
 - [ ] Balance calibration after live runs
