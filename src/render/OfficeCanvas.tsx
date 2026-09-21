@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+/** Static browser env — avoids Pixi dynamic `import('./browserAll')` which breaks under Next webpack (`.split` on undefined chunk id). */
+import 'pixi.js/browser';
 import { Application, Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import type { GameState, RoleId } from '@/game';
 import {
@@ -166,6 +168,26 @@ export function OfficeCanvas({ state }: { state: GameState }) {
     appRef.current = app;
 
     (async () => {
+      // Wait until flex layout gives the host real size (avoids blank/tiny first paint).
+      await new Promise<void>((resolve) => {
+        if (host.clientWidth > 0 && host.clientHeight > 40) {
+          resolve();
+          return;
+        }
+        const ro = new ResizeObserver(() => {
+          if (host.clientWidth > 0 && host.clientHeight > 40) {
+            ro.disconnect();
+            resolve();
+          }
+        });
+        ro.observe(host);
+        window.setTimeout(() => {
+          ro.disconnect();
+          resolve();
+        }, 600);
+      });
+      if (destroyed) return;
+
       try {
         await app.init({
           background: '#0a141e',
@@ -173,6 +195,8 @@ export function OfficeCanvas({ state }: { state: GameState }) {
           resolution: Math.min(window.devicePixelRatio || 1, 2),
           autoDensity: true,
           resizeTo: host,
+          preference: 'webgl',
+          skipExtensionImports: true,
         });
       } catch (err) {
         console.error('Pixi init failed', err);
