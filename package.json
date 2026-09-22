@@ -22,6 +22,7 @@
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
     "@neondatabase/serverless": "^1.0.1",
+    "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.2",
     "next": "15.5.23",
